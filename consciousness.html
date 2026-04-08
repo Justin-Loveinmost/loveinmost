@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>의식 수준 측정 도구 | Consciousness Level Assessment</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <!-- PDF 생성 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #6C3FC5;
+            --primary-light: #9B6DDD;
+            --primary-dark: #4A2890;
+            --gold: #C9A84C;
+            --gold-light: #E8C97A;
+            --indigo: #3D3B8E;
+            --bg: #F7F5FF;
+            --card: #FFFFFF;
+            --text: #1A1035;
+            --muted: #6B6B8A;
+            --border: #E0D9F5;
+            --success: #2E8B57;
+            --warn: #D4704A;
+            --shadow: 0 4px 24px rgba(108, 63, 197, 0.10);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--indigo) 100%);
+            color: #fff;
+            padding: 32px 24px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .app-header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .lang-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .lang-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
+            transform: scale(1.05);
+            cursor: pointer;
+        }
+        
+        .lang-btn:active {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* CARD */
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.96rem;
+            color: var(--text);
+            background: #FAFAFF;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary-light);
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(108, 63, 197, 0.10);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .flex-row .form-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            padding: 13px 32px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.97rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--indigo));
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(108, 63, 197, 0.28);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 63, 197, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background: #fff;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            padding: 11px 24px;
+        }
+
+        .btn-outline:hover {
+            background: var(--bg);
+        }
+
+        .btn-sm {
+            padding: 10px 20px;
+            font-size: 0.87rem;
+        }
+
+        /* PROGRESS */
+        .progress-wrap {
+            margin-bottom: 24px;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+            border-radius: 4px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* SECTION TITLE */
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 6px;
+        }
+
+        .section-sub {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        /* QUESTION */
+        .question-block {
+            margin-bottom: 28px;
+            padding: 18px;
+            background: #FAFAFF;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .question-block:hover {
+            border-color: var(--primary-light);
+            background: #FEFDFB;
+        }
+
+        .question-block.unanswered {
+            border-color: var(--warn);
+            background: rgba(212, 112, 74, 0.05);
+        }
+
+        .q-num {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .q-text {
+            font-size: 0.96rem;
+            color: var(--text);
+            margin-bottom: 14px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+
+        .likert-scale {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .likert-btn {
+            min-width: 50px;
+            min-height: 50px;
+            padding: 8px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .likert-btn:hover {
+            border-color: var(--primary-light);
+            color: var(--primary);
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+
+        .likert-btn:active {
+            transform: scale(0.95);
+        }
+
+        .likert-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(108, 63, 197, 0.4);
+        }
+
+        .likert-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* NAV */
+        .nav-btns {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 28px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .page-indicator {
+            font-size: 0.87rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* SCREENS */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* RESULTS */
+        .result-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 14px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--muted);
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        /* SCORE DISPLAY */
+        .score-hero {
+            text-align: center;
+            padding: 36px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary), var(--indigo));
+            border-radius: 16px;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+        .score-num {
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -3px;
+            line-height: 1;
+        }
+
+        .score-level {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 12px;
+            color: var(--gold-light);
+        }
+
+        .score-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        /* CHART */
+        .chart-wrap {
+            position: relative;
+            height: 380px;
+            margin: 24px 0;
+        }
+
+        /* INSIGHT BOX */
+        .insight-box {
+            background: linear-gradient(135deg, #F5F0FF, #EDE8FF);
+            border-left: 5px solid var(--primary);
+            padding: 16px 18px;
+            border-radius: 0 12px 12px 0;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .insight-box.success {
+            background: linear-gradient(135deg, #F0FFF6, #DDFAEC);
+            border-left-color: var(--success);
+        }
+
+        .insight-box.warn {
+            background: linear-gradient(135deg, #FFF5F0, #FFE8DC);
+            border-left-color: var(--warn);
+        }
+
+        .insight-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 0.96rem;
+        }
+
+        /* CLIENT CARD */
+        .client-card {
+            background: linear-gradient(135deg, #F7F5FF, #EDE8FF);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 18px;
+        }
+
+        .client-level-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+        }
+
+        .client-score {
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .client-interpretation {
+            margin-top: 16px;
+            font-size: 0.92rem;
+            line-height: 1.8;
+            color: var(--text);
+        }
+
+        .next-level {
+            background: linear-gradient(135deg, var(--gold), #A07030);
+            color: #fff;
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 14px;
+        }
+
+        .next-level h4 {
+            font-size: 0.96rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .next-level p {
+            font-size: 0.87rem;
+            opacity: 0.95;
+            line-height: 1.6;
+        }
+
+        /* THANK YOU */
+        .thankyou-content {
+            text-align: center;
+            padding: 48px 28px;
+            margin-top: 20px;
+        }
+
+        .thankyou-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .thankyou-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
+        }
+
+        .thankyou-desc {
+            font-size: 0.96rem;
+            color: var(--muted);
+            line-height: 1.8;
+            max-width: 480px;
+            margin: 0 auto 20px;
+        }
+
+        .status-badge {
+            font-size: 0.88rem;
+            color: var(--success);
+            font-weight: 600;
+            padding: 10px 20px;
+            background: #f0fff6;
+            border: 1px solid #bdecd0;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        /* HIDDEN */
+        .hidden {
+            display: none !important;
+        }
+
+        /* PRINT */
+        @media print {
+            .lang-btn,
+            .nav-btns,
+            .result-tabs,
+            .no-print {
+                display: none !important;
+            }
+
+            body {
+                background: #fff;
+            }
+
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
+            }
+
+            .tab-content {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .app-header {
+                padding: 24px 16px;
+            }
+
+            .app-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .score-num {
+                font-size: 2.8rem;
+            }
+
+            .likert-btn {
+                min-width: 45px;
+                min-height: 45px;
+                font-size: 0.85rem;
+                padding: 6px;
+            }
+
+            .nav-btns {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .chart-wrap {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <div class="app-header">
+        <button class="lang-btn" onclick="toggleLang()" id="langBtn">🌐 English</button>
+        <div class="header-content">
+            <h1 id="hTitle">의식 수준 측정 도구</h1>
+            <p id="hSub">David R. Hawkins 의식 지도(Map of Consciousness) 기반</p>
+        </div>
+    </div>
+
+    <!-- INTRO SCREEN -->
+    <div id="screen-intro" class="screen active">
+        <div class="card">
+            <h2 class="section-title" id="introTitle">시작하기</h2>
+            <p class="section-sub" id="introSub">아래 정보를 입력한 후 검사를 시작하세요. 총 99문항이며 약 20-25분 소요됩니다.</p>
+
+            <div class="flex-row">
+                <div class="form-group">
+                    <label id="labelName">이름 (내담자)</label>
+                    <input type="text" id="inputName" placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label id="labelDate">검사 날짜</label>
+                    <input type="date" id="inputDate">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label id="labelCounselor">상담사 이름 (선택)</label>
+                <input type="text" id="inputCounselor" placeholder="김상담">
+            </div>
+
+            <div class="insight-box" style="margin-bottom: 20px;">
+                <div class="insight-title" id="noticeTitle">📋 검사 안내</div>
+                <span id="noticeText">각 문항을 읽고 현재 자신의 일반적인 삶의 패턴과 태도에 얼마나 해당하는지 솔직하게 응답해 주세요. 정답은 없으며, 가장 솔직한 답변이 가장 정확한 결과를 제공합니다.</span>
+            </div>
+
+            <button class="btn btn-primary btn-lg" onclick="startAssessment()" id="btnStart">검사 시작하기 →</button>
+        </div>
+    </div>
+
+    <!-- QUESTIONS SCREEN -->
+    <div id="screen-questions" class="screen hidden">
+        <div class="progress-wrap">
+            <div class="progress-meta">
+                <span id="progText">페이지 1 / 6</span>
+                <span id="progPct">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="card" id="questionCard"></div>
+
+        <div class="nav-btns no-print">
+            <button class="btn btn-outline" onclick="prevPage()" id="btnPrev">← 이전</button>
+            <span class="page-indicator" id="pageIndicator">1 / 6</span>
+            <button class="btn btn-primary" onclick="nextPage()" id="btnNext">다음 →</button>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="screen-results" class="screen hidden">
+        <div class="result-tabs no-print">
+            <button class="tab-btn active" onclick="switchTab('client')" id="tabClient">💚 내담자 결과</button>
+            <button class="tab-btn" onclick="switchTab('clinical')" id="tabClinical">🔬 임상용 보고서</button>
+        </div>
+
+        <div id="tab-client" class="tab-content active"></div>
+        <div id="tab-clinical" class="tab-content"></div>
+
+        <div class="nav-btns no-print" style="margin-top: 24px;">
+            <button class="btn btn-outline" onclick="downloadPDF()" id="btnPrint" style="background: linear-gradient(135deg, #4a2890, #6c3fc5); color: white; border: none;">📥 PDF로 다운로드</button>
+            <button class="btn btn-outline" onclick="window.print()" id="btnPrintHtml">🖨️ 인쇄하기</button>
+            <button class="btn btn-primary" onclick="restartAssessment()" id="btnRestart">다시 시작</button>
+        </div>
+    </div>
+
+    <!-- THANK YOU SCREEN -->
+    <div id="screen-thankyou" class="screen hidden">
+        <div class="card">
+            <div class="thankyou-content">
+                <div class="thankyou-icon">🌿</div>
+                <h2 class="thankyou-title" id="ty-title">검사가 완료되었습니다</h2>
+                <p class="thankyou-desc" id="ty-desc">소중한 시간을 내어 검사에 응해 주셔서 감사합니다.<br>검사 결과는 상담사에게 전달되었으며,<br>곧 연락을 드릴 예정입니다.</p>
+                <div class="status-badge" id="ty-status">✅ 결과가 상담사에게 전달되었습니다</div>
+                <p style="font-size: 0.8rem; color: var(--muted); margin-top: 28px;">🌿 Love Inmost Life Coaching & Counselling<br>Leeming, Perth WA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============= DATA =============
+
+const LEVELS = [
+    { id: 'shame', val: 20, ko: '수치심', en: 'Shame', emo_ko: '굴욕, 자기혐오', emo_en: 'Humiliation, Self-hatred', view_ko: '자기 자신이 결함 있는 존재', view_en: 'Self as fundamentally flawed' },
+    { id: 'guilt', val: 30, ko: '죄책감', en: 'Guilt', emo_ko: '비난, 파괴성', emo_en: 'Blame, Destructiveness', view_ko: '악하고 죄 많은 존재', view_en: 'Evil, sinful being' },
+    { id: 'apathy', val: 50, ko: '무감각', en: 'Apathy', emo_ko: '절망, 체념', emo_en: 'Despair, Resignation', view_ko: '희망 없고 무의미한 세상', view_en: 'Hopeless, meaningless world' },
+    { id: 'grief', val: 75, ko: '슬픔', en: 'Grief', emo_ko: '후회, 상실감', emo_en: 'Regret, Loss', view_ko: '슬프고 비극적인 삶', view_en: 'Tragic, sorrowful life' },
+    { id: 'fear', val: 100, ko: '두려움', en: 'Fear', emo_ko: '불안, 회피', emo_en: 'Anxiety, Avoidance', view_ko: '위험하고 위협적인 세상', view_en: 'Dangerous, threatening world' },
+    { id: 'desire', val: 125, ko: '욕망', en: 'Desire', emo_ko: '집착, 갈망', emo_en: 'Craving, Addiction', view_ko: '욕망 충족이 행복의 조건', view_en: 'Satisfaction brings happiness' },
+    { id: 'anger', val: 150, ko: '분노', en: 'Anger', emo_ko: '증오, 공격성', emo_en: 'Hate, Aggression', view_ko: '불공평하고 적대적인 세상', view_en: 'Unfair, hostile world' },
+    { id: 'pride', val: 175, ko: '자존심', en: 'Pride', emo_ko: '오만, 방어적', emo_en: 'Arrogance, Defensiveness', view_ko: '내 편과 네 편이 나뉜 세상', view_en: 'Us vs them world' },
+    { id: 'courage', val: 200, ko: '용기', en: 'Courage', emo_ko: '긍정, 임파워먼트', emo_en: 'Affirmation, Empowerment', view_ko: '실행 가능하고 흥미로운 삶', view_en: 'Feasible, exciting life' },
+    { id: 'neutral', val: 250, ko: '중립', en: 'Neutrality', emo_ko: '신뢰, 유연함', emo_en: 'Trust, Flexibility', view_ko: '괜찮고 안전한 세상', view_en: 'Okay, safe world' },
+    { id: 'willing', val: 310, ko: '의지', en: 'Willingness', emo_ko: '낙관, 희망', emo_en: 'Optimism, Hope', view_ko: '성장하고 번성하는 삶', view_en: 'Hopeful, thriving life' },
+    { id: 'accept', val: 350, ko: '수용', en: 'Acceptance', emo_ko: '용서, 조화', emo_en: 'Forgiveness, Harmony', view_ko: '풍요롭고 조화로운 세상', view_en: 'Abundant, harmonious world' },
+    { id: 'reason', val: 400, ko: '이성', en: 'Reason', emo_ko: '이해, 의미', emo_en: 'Understanding, Meaning', view_ko: '의미 있고 설계된 세상', view_en: 'Meaningful, designed world' },
+    { id: 'love', val: 500, ko: '사랑', en: 'Love', emo_ko: '경외, 자비', emo_en: 'Reverence, Compassion', view_ko: '사랑스럽고 완전한 세상', view_en: 'Benign, loving world' },
+    { id: 'joy', val: 540, ko: '기쁨', en: 'Joy', emo_ko: '평온, 내면의 충만', emo_en: 'Serenity, Inner fullness', view_ko: '완전하고 충만한 세상', view_en: 'Complete, abundant world' },
+    { id: 'peace', val: 600, ko: '평화', en: 'Peace', emo_ko: '축복, 초월', emo_en: 'Bliss, Transcendence', view_ko: '완벽하고 초월적인 세상', view_en: 'Perfect, transcendent world' },
+    { id: 'enlight', val: 700, ko: '깨달음', en: 'Enlightenment', emo_ko: '순수 의식, 존재', emo_en: 'Pure Consciousness, Being', view_ko: '의식 그 자체가 현실', view_en: 'Consciousness itself is reality' },
+];
+
+// 99개 신규 문항 데이터
+const QUESTIONS = [
+    // SHAME (20) - 8개
+    { id: 1, lv: 'shame', ko: '나는 내가 존재하지 않는 것이 낫다고 진심으로 생각한 적이 있다.', en: 'I have seriously thought that it would be better if I did not exist.' },
+    { id: 2, lv: 'shame', ko: '누군가 나를 관찰할 때 극도의 수치심으로 인해 내 얼굴과 몸을 숨기고 싶은 충동을 느낀다.', en: 'When others observe me, I feel such intense shame that I want to hide my face and body completely.' },
+    { id: 3, lv: 'shame', ko: '나는 내 기본적인 특성이나 모습이 다른 사람들보다 근본적으로 "잘못"되었다고 느낀다.', en: 'I feel that my fundamental characteristics and appearance are inherently "wrong" compared to others.' },
+    { id: 4, lv: 'shame', ko: '내가 누군가에게 관심을 받으면, 나는 곧 그들이 나를 거절할 것이라고 확신한다.', en: 'When someone shows interest in me, I immediately believe they will soon reject me.' },
+    { id: 5, lv: 'shame', ko: '나는 내 자신이 다른 사람들의 짐이자 부담이라고 깊이 믿는다.', en: 'I deeply believe that I am a burden and source of pain for those around me.' },
+    { id: 6, lv: 'shame', ko: '어떤 작은 실수도 나의 무가치함을 증명하는 증거로 느껴진다.', en: 'Any small mistake feels like proof of my complete worthlessness.' },
+    { id: 7, lv: 'shame', ko: '나는 과거의 부정적 경험이나 상처가 나를 영구적으로 손상시켰다고 믿는다.', en: 'I believe that past negative experiences or trauma have permanently damaged me.' },
+    { id: 8, lv: 'shame', ko: '나는 다른 사람들과 진정한 관계를 맺을 수 없다고 확신하며, 혼자가 되는 것이 낫다고 생각한다.', en: 'I am certain that I cannot form genuine relationships with others and believe it is better to be alone.' },
+    
+    // GUILT (30) - 8개
+    { id: 9, lv: 'guilt', ko: '나는 타인에게 해를 끼쳤다고 생각하는 상황들이 자주 떠올라 밤에 잠을 설친다.', en: 'I frequently remember situations where I may have hurt others, causing me to lose sleep at night.' },
+    { id: 10, lv: 'guilt', ko: '어떤 일이 잘못되었을 때, 내가 그것을 완벽하게 예방하지 못했다는 자책이 먼저 든다.', en: 'When something goes wrong, my first thought is that I should have perfectly prevented it.' },
+    { id: 11, lv: 'guilt', ko: '내가 한 말이나 행동으로 누군가가 상처받았을 가능성이 있으면, 나는 그것을 반복해서 생각하고 재해석한다.', en: 'If my words or actions might have hurt someone, I repeatedly replay and reinterpret the situation.' },
+    { id: 12, lv: 'guilt', ko: '나는 내가 받은 도움이나 호의를 충분히 갚지 못했다는 죄책감을 느낀다.', en: 'I feel guilty that I have not sufficiently repaid the help or kindness I have received.' },
+    { id: 13, lv: 'guilt', ko: '과거의 잘못이나 불완전한 행동 때문에 자신에게 어느 정도의 고통이나 제약을 받아야 한다고 생각한다.', en: 'I believe I should experience some degree of suffering or restriction because of my past mistakes or failures.' },
+    { id: 14, lv: 'guilt', ko: '어떤 선택을 했을 때 "내가 다른 선택을 했다면 결과가 달랐을 텐데"라는 생각에 사로잡혀 자책한다.', en: 'When I make a choice, I become obsessed with the thought, "If I had chosen differently, the outcome would have been different."' },
+    { id: 15, lv: 'guilt', ko: '내 행동의 부정적 결과에 대해 타인이 나를 용서하더라도, 나는 스스로를 용서하기 어렵다.', en: 'Even if others forgive me for the negative consequences of my actions, I find it difficult to forgive myself.' },
+    { id: 16, lv: 'guilt', ko: '나는 "만약 내가 더 신경 썼다면" 또는 "만약 내가 더 노력했다면"이라는 생각이 자주 든다.', en: 'I frequently think "If only I had paid more attention" or "If only I had tried harder."' },
+    
+    // APATHY (50) - 8개
+    { id: 17, lv: 'apathy', ko: '미래에 어떤 긍정적 변화가 일어날 수 있다는 믿음이 거의 또는 전혀 없다.', en: 'I have almost or absolutely no belief that any positive changes can happen in the future.' },
+    { id: 18, lv: 'apathy', ko: '무언가를 하고 싶은 의욕이나 에너지가 거의 없으며, 모든 것이 무의미하게 느껴진다.', en: 'I have almost no motivation or energy to do anything, and everything feels meaningless.' },
+    { id: 19, lv: 'apathy', ko: '다른 사람들이 나를 돕거나 지지해도 별로 도움이 되지 않을 것이라고 생각한다.', en: 'I think that even if others try to help or support me, it will not make much difference.' },
+    { id: 20, lv: 'apathy', ko: '나는 지금 상태에서 벗어날 수 없다고 느끼며, 그것을 바꾸려는 노력 자체가 헛되다고 생각한다.', en: 'I feel trapped in my current state and believe that any effort to change it would be futile.' },
+    { id: 21, lv: 'apathy', ko: '나는 자신의 감정이나 상황에 거의 신경을 쓰지 않으며, 무관심한 상태가 오래 지속되고 있다.', en: 'I feel almost indifferent to my emotions or circumstances, and this state of apathy has lasted a long time.' },
+    { id: 22, lv: 'apathy', ko: '나는 삶 자체가 의미 있는지에 대해 의문을 품으며, 그 답을 찾을 수 없다고 느낀다.', en: 'I question whether life itself has meaning, and I feel unable to find an answer to that question.' },
+    { id: 23, lv: 'apathy', ko: '어떤 일을 시작해도 지루하거나 흥미를 잃기가 쉬우며, 끝내기가 어렵다.', en: 'Even when I start something, I easily lose interest and find it difficult to complete it.' },
+    { id: 24, lv: 'apathy', ko: '나는 내 삶이나 미래에 대해 생각하는 것을 피하려고 하며, 가능한 한 그런 생각을 하지 않으려고 한다.', en: 'I try to avoid thinking about my life or future, and do everything I can to prevent such thoughts.' },
+    
+    // GRIEF (75) - 8개
+    { id: 25, lv: 'grief', ko: '내가 잃어버린 무언가(관계, 기회, 건강, 시간)에 대한 깊은 슬픔이 갑자기 밀려온다.', en: 'Deep sadness about something I have lost (relationships, opportunities, health, time) suddenly overwhelms me.' },
+    { id: 26, lv: 'grief', ko: '과거의 어떤 순간을 다시 돌아갈 수 없다는 것을 깨달을 때마다 깊은 슬픔을 느낀다.', en: 'Every time I realize that a certain moment in the past cannot be relived, I feel deep sadness.' },
+    { id: 27, lv: 'grief', ko: '내가 더 충분히 누군가를 사랑하거나 챙기지 못했다는 후회가 계속 남아있다.', en: 'I continue to feel regret that I did not love or care for someone sufficiently.' },
+    { id: 28, lv: 'grief', ko: '기쁜 순간이 있어도 그것이 "지금 더 이상 돌아오지 않을 과거의 시간"이라는 생각이 들어 슬퍼진다.', en: 'Even in happy moments, I become sad thinking that this is "a time that will not come again."' },
+    { id: 29, lv: 'grief', ko: '나는 지금 내 삶이 내가 예상했던 것이 아니라는 감정을 받아들이기 어렵다.', en: 'I find it difficult to accept the feeling that my life now is not what I had expected.' },
+    { id: 30, lv: 'grief', ko: '나는 "만약 그때 다르게 했더라면"이라는 소원이 자주 들고, 그 생각으로 깊이 슬퍼진다.', en: 'I frequently wish "If I had done things differently back then," and this thought makes me deeply sad.' },
+    { id: 31, lv: 'grief', ko: '누군가가 이미 떠나가거나 헤어진 관계에 대해 이야기할 때, 나는 깊은 슬픔을 느낀다.', en: 'When talking about someone who has passed away or a relationship that has ended, I feel deep sadness.' },
+    { id: 32, lv: 'grief', ko: '나는 과거의 좋은 시절이 돌아오지 않을 것이라는 생각에 가슴이 철렁내려앉는다.', en: 'The thought that the good times of the past will not return makes my heart sink.' },
+    
+    // FEAR (100) - 8개
+    { id: 33, lv: 'fear', ko: '미래의 불확실한 상황에 대해 생각할 때, 나는 자주 최악의 시나리오를 상상하고 가슴이 철렁거린다.', en: 'When thinking about uncertain situations in the future, I frequently imagine worst-case scenarios and feel my heart sink.' },
+    { id: 34, lv: 'fear', ko: '예상하지 못한 상황이 발생하면, 나는 즉시 신체적 불안감(손 떨림, 가슴 철렁거림, 숨가쁨)을 경험한다.', en: 'When unexpected situations occur, I immediately experience physical anxiety symptoms (trembling hands, sinking heart, shortness of breath).' },
+    { id: 35, lv: 'fear', ko: '사람들이 나를 판단하거나 비판할까봐 두려워 하고 싶은 말이나 행동을 자제할 때가 많다.', en: 'I often refrain from saying or doing what I want because I fear people\'s judgment or criticism.' },
+    { id: 36, lv: 'fear', ko: '나는 새로운 환경이나 낯선 사람들 앞에서 불편하고 안전하지 않다는 느낌을 받는다.', en: 'In new environments or with unfamiliar people, I feel uncomfortable and unsafe.' },
+    { id: 37, lv: 'fear', ko: '어떤 일을 하다가 실패할 가능성이 조금만 있어도 나는 그것을 시도하기를 회피한다.', en: 'Even if there is a small possibility of failure, I tend to avoid attempting something.' },
+    { id: 38, lv: 'fear', ko: '나는 질병이나 건강 문제에 대해 과도하게 걱정하는 경향이 있다.', en: 'I have a tendency to excessively worry about illness or health problems.' },
+    { id: 39, lv: 'fear', ko: '누군가 나를 거절하거나 나를 떠날 가능성에 대해 자주 생각하고 불안해한다.', en: 'I frequently think about and worry about the possibility of someone rejecting me or leaving me.' },
+    { id: 40, lv: 'fear', ko: '나는 내가 통제할 수 없는 상황에 처하면 극도의 불안감을 느끼고 그 상황을 피하려고 한다.', en: 'When I am in a situation I cannot control, I feel extreme anxiety and try to avoid that situation.' },
+    
+    // DESIRE (125) - 8개
+    { id: 41, lv: 'desire', ko: '내가 원하는 무언가(성공, 인정, 물질, 관계 등)를 얻지 못할 때, 나는 강한 좌절감과 공허함을 느낀다.', en: 'When I don\'t get something I want (success, recognition, possessions, relationships), I feel strong frustration and emptiness.' },
+    { id: 42, lv: 'desire', ko: '특정한 것을 더 많이 얻거나 더 나은 상태가 되어야만 진정으로 행복할 수 있을 것 같다.', en: 'I feel that I can only be truly happy if I acquire more or achieve a better state.' },
+    { id: 43, lv: 'desire', ko: '어떤 욕구나 충동을 느낄 때, 나는 그것을 즉시 충족시키고 싶은 강한 압박감을 경험한다.', en: 'When I feel a desire or impulse, I experience strong pressure to satisfy it immediately.' },
+    { id: 44, lv: 'desire', ko: '내가 갖고 싶은 물질적인 것이나 상태를 상상하면, 그것을 얻을 때까지 불안정한 기분이 지속된다.', en: 'When I imagine material things or states I want, I feel unstable until I acquire them.' },
+    { id: 45, lv: 'desire', ko: '누군가가 나에게 특별한 관심이나 사랑을 주지 않으면, 나는 그것을 얻기 위해 많은 노력을 하거나 집착한다.', en: 'If someone does not give me special attention or love, I work hard or obsess to obtain it.' },
+    { id: 46, lv: 'desire', ko: '내가 하고 싶은 것을 하지 못하게 제약받으면, 나는 그것을 하기 위해 다양한 방법을 시도하거나 규칙을 우회한다.', en: 'When I am prevented from doing what I want, I try various methods or circumvent rules to do it.' },
+    { id: 47, lv: 'desire', ko: '내가 이전에 갖거나 경험했던 것들이 충분해 보이지 않으며, 항상 더 많은 것을 원한다.', en: 'What I have previously possessed or experienced seems insufficient, and I always want more.' },
+    { id: 48, lv: 'desire', ko: '다른 사람들이 가진 것을 보면, 나는 나도 그것을 갖고 싶다는 강한 욕망을 느낀다.', en: 'When I see what others have, I feel a strong desire to possess it too.' },
+    
+    // ANGER (150) - 8개
+    { id: 49, lv: 'anger', ko: '불공평한 대우나 부당한 상황을 만나면, 나는 강한 분노를 느끼고 그것에 맞서거나 복수하고 싶은 충동을 느낀다.', en: 'When faced with unfair treatment or unjust situations, I feel strong anger and an urge to confront or retaliate.' },
+    { id: 50, lv: 'anger', ko: '내가 예상했던 대로 되지 않거나 타인이 내 기대를 충족시키지 못하면, 나는 쉽게 화가 나고 짜증이 난다.', en: 'When things don\'t go as expected or others fail to meet my expectations, I easily become angry and irritated.' },
+    { id: 51, lv: 'anger', ko: '누군가가 내 말을 듣지 않거나 내 주장에 반박하면, 나는 그들과 싸우거나 그들을 설득하고 싶은 강한 욕구를 느낀다.', en: 'When someone doesn\'t listen to me or challenges my arguments, I feel a strong urge to fight or convince them.' },
+    { id: 52, lv: 'anger', ko: '나는 종종 누군가의 해로운 행동이나 성격 때문에 그들을 심하게 비판하거나 판단한다.', en: 'I often harshly criticize or judge someone because of their harmful actions or personality traits.' },
+    { id: 53, lv: 'anger', ko: '분노를 느낄 때 나는 목소리를 높이거나 신체적으로 표현(물건 집기, 주먹 쥐기 등)을 하려는 충동이 있다.', en: 'When angry, I have an urge to raise my voice or physically express my anger (gripping objects, clenching fists, etc.).' },
+    { id: 54, lv: 'anger', ko: '누군가 나를 무시하거나 나의 의견을 깔본다고 느끼면, 나는 보복하거나 그들에게 같은 고통을 주고 싶다.', en: 'When I feel someone dismisses or disrespects me, I want to retaliate or cause them the same suffering.' },
+    { id: 55, lv: 'anger', ko: '나는 내 분노가 정당하다고 생각하며, 이 분노는 다른 사람들의 잘못에서 비롯되었다고 믿는다.', en: 'I believe my anger is justified and that it stems from other people\'s wrongdoings.' },
+    { id: 56, lv: 'anger', ko: '누군가가 나를 화나게 한 후에도 그 사람에게 계속 화를 내며, 그 감정을 오래 유지한다.', en: 'After someone makes me angry, I continue to hold onto that anger toward them for a long time.' },
+    
+    // PRIDE (175) - 8개
+    { id: 57, lv: 'pride', ko: '나의 관점이나 신념이 올바르다는 확신이 강하며, 다른 사람의 비판이나 조언을 받아들이기 어렵다.', en: 'I am strongly convinced that my perspective or beliefs are correct and find it difficult to accept others\' criticism or advice.' },
+    { id: 58, lv: 'pride', ko: '내 성취나 능력에 대한 자부심이 크며, 타인에게 인정받고 싶은 욕구가 강하다.', en: 'I have great pride in my accomplishments or abilities and a strong desire to be recognized by others.' },
+    { id: 59, lv: 'pride', ko: '내가 틀렸음을 인정하거나 먼저 사과하는 것이 매우 어렵게 느껴지며, 자존심이 상한다.', en: 'I find it very difficult to admit I was wrong or to apologize first, as it feels like a blow to my pride.' },
+    { id: 60, lv: 'pride', ko: '나는 다른 사람들보다 더 뛰어나거나 특별하다는 생각이 자주 들며, 우월감을 느끼는 경향이 있다.', en: 'I often think I am superior or more special than others and tend to feel a sense of superiority.' },
+    { id: 61, lv: 'pride', ko: '누군가가 내 능력이나 성과에 대해 의심하거나 질문하면, 나는 그들을 설득하거나 증명하려고 노력한다.', en: 'When someone questions or doubts my abilities or achievements, I try to convince or prove myself to them.' },
+    { id: 62, lv: 'pride', ko: '내가 속한 집단(가족, 직장, 사회)의 가치관이나 방식이 다른 집단보다 우월하다고 생각한다.', en: 'I believe the values or ways of the group I belong to (family, workplace, society) are superior to other groups.' },
+    { id: 63, lv: 'pride', ko: '누군가에게 도움을 청하거나 약점을 드러내는 것을 피하려고 하며, 독립적으로 처리하고 싶어 한다.', en: 'I try to avoid asking for help or revealing my weaknesses, preferring to handle things independently.' },
+    { id: 64, lv: 'pride', ko: '내가 한 말이나 행동이 좋지 않은 결과를 초래해도, 나는 그것이 내 탓이 아니라고 생각할 수 있다.', en: 'Even if my words or actions lead to negative consequences, I can think that it is not my fault.' },
+    
+    // COURAGE (200) - 8개
+    { id: 65, lv: 'courage', ko: '어려운 상황에서도 앞으로 나아갈 수 있는 내면의 힘이 있다고 느끼며, 삶에 적극적으로 임한다.', en: 'Even in difficult situations, I feel I have inner strength to move forward and engage with life proactively.' },
+    { id: 66, lv: 'courage', ko: '실패할 가능성이 있어도, 나는 그것을 시도할 가치가 있다고 생각하고 행동에 옮긴다.', en: 'Even if there is a possibility of failure, I believe it is worth attempting and take action.' },
+    { id: 67, lv: 'courage', ko: '새로운 환경이나 상황에 처했을 때, 나는 불편함을 느끼지만 그것을 배움의 기회로 본다.', en: 'When faced with new environments or situations, I feel uncomfortable but view it as a learning opportunity.' },
+    { id: 68, lv: 'courage', ko: '나는 내 삶의 상황에 대해 스스로 책임을 지며, 자신의 선택과 행동으로 상황을 바꿀 수 있다고 믿는다.', en: 'I take responsibility for my life\'s circumstances and believe I can change my situation through my own choices and actions.' },
+    { id: 69, lv: 'courage', ko: '누군가가 나를 비판할 때, 나는 그 의견에서 배울 점을 찾으려고 노력한다.', en: 'When someone criticizes me, I try to find something to learn from their opinion.' },
+    { id: 70, lv: 'courage', ko: '내가 한 행동의 부정적 결과에 대해 책임을 지고, 앞으로 어떻게 할지를 생각한다.', en: 'I take responsibility for the negative consequences of my actions and think about what to do differently next time.' },
+    { id: 71, lv: 'courage', ko: '나는 내 가치와 능력에 대해 적절한 자신감을 가지고 있으며, 과장하거나 폄하하지 않는다.', en: 'I have appropriate confidence in my worth and abilities without exaggerating or underestimating them.' },
+    { id: 72, lv: 'courage', ko: '어떤 목표를 설정했을 때, 나는 그것을 달성하기 위해 지속적인 노력을 하고, 중간에 포기하지 않는다.', en: 'When I set a goal, I make sustained efforts to achieve it and do not give up midway.' },
+    
+    // NEUTRALITY (250) - 6개
+    { id: 73, lv: 'neutral', ko: '상황이 내 뜻대로 되지 않아도 지나치게 집착하거나 동요하지 않고 비교적 평온하게 받아들인다.', en: 'Even when situations don\'t go my way, I accept them relatively calmly without excessive attachment or disturbance.' },
+    { id: 74, lv: 'neutral', ko: '삶의 다양한 상황과 사람들에 유연하게 적응하며, 한 가지 방식만을 고집하지 않는다.', en: 'I adapt flexibly to various situations and people in life without insisting on a single approach.' },
+    { id: 75, lv: 'neutral', ko: '다른 사람들의 다양한 관점과 선택을 존중하며, 굳이 판단하거나 바꾸려 하지 않는다.', en: 'I respect others\' diverse perspectives and choices without feeling the need to judge or change them.' },
+    { id: 76, lv: 'neutral', ko: '결과에 대해 과도하게 집착하거나 통제하려 하기보다 자연스럽게 흘러가도록 두는 편이다.', en: 'Rather than being overly attached to or controlling outcomes, I tend to let things unfold naturally.' },
+    { id: 77, lv: 'neutral', ko: '나는 상황의 좋은 면과 나쁜 면을 모두 인정할 수 있으며, 이분법적으로 판단하지 않는다.', en: 'I can acknowledge both positive and negative aspects of situations and do not judge in a dichotomous way.' },
+    { id: 78, lv: 'neutral', ko: '어떤 일이 예상과 다르게 되어도, 나는 그것을 받아들이고 새로운 가능성을 모색한다.', en: 'Even if things turn out differently than expected, I accept it and explore new possibilities.' },
+    
+    // WILLINGNESS (310) - 6개
+    { id: 79, lv: 'willing', ko: '나는 자신을 개선하고 성장시키기 위해 적극적으로 노력하며, 새로운 경험과 지식에 열려 있다.', en: 'I actively strive to improve and grow, and I am open to new experiences and knowledge.' },
+    { id: 80, lv: 'willing', ko: '새로운 것을 배우고 발전하는 것이 즐겁고 의미 있게 느껴져서 꾸준히 투자한다.', en: 'Learning and developing new things feels enjoyable and meaningful, so I consistently invest in it.' },
+    { id: 81, lv: 'willing', ko: '어렵더라도 나에게 유익한 일들을 기꺼이 시도하고 참여하는 편이다.', en: 'I willingly try and engage in things that benefit me, even when they are challenging.' },
+    { id: 82, lv: 'willing', ko: '미래에 대해 낙관적이며, 더 나은 삶을 만들 수 있다고 진심으로 믿는다.', en: 'I am optimistic about the future and genuinely believe I can create a better life.' },
+    { id: 83, lv: 'willing', ko: '나는 과거의 실수나 아쉬움에서 배우려고 하며, 그것이 성장의 자원이 될 수 있다고 본다.', en: 'I try to learn from my past mistakes or regrets and see them as resources for growth.' },
+    { id: 84, lv: 'willing', ko: '다른 사람들의 성공을 보면 나도 그렇게 될 수 있다고 생각하며 영감을 받는다.', en: 'When I see others\' success, I think I can achieve the same and feel inspired.' },
+    
+    // ACCEPTANCE (350) - 6개
+    { id: 85, lv: 'accept', ko: '나 자신의 한계와 불완전함을 인정하고 있는 그대로 받아들일 수 있다.', en: 'I can acknowledge and accept my own limitations and imperfections as they are.' },
+    { id: 86, lv: 'accept', ko: '과거의 고통스러운 경험이나 상처를 용서하고 내려놓을 수 있는 힘이 있다.', en: 'I have the capacity to forgive and release past painful experiences and wounds.' },
+    { id: 87, lv: 'accept', ko: '내가 통제할 수 없는 것들을 받아들이고 그 안에서도 평화를 찾을 수 있다.', en: 'I can accept what is beyond my control and find peace within those circumstances.' },
+    { id: 88, lv: 'accept', ko: '삶의 다양한 경험들(좋고 나쁜 것 모두)이 각각 의미와 가치가 있다고 느낀다.', en: 'I feel that all of life\'s experiences — both good and bad — each have their own meaning and value.' },
+    { id: 89, lv: 'accept', ko: '다른 사람의 부족함이나 잘못을 이해하려고 노력하며, 그것이 내 관계에 영향을 주지 않는다.', en: 'I try to understand others\' shortcomings or mistakes, and it does not affect my relationships with them.' },
+    { id: 90, lv: 'accept', ko: '나는 사람들이 제각기 다른 여정을 가지고 있음을 인정하며, 누구의 길이 맞는지 판단하지 않는다.', en: 'I acknowledge that people have different journeys and do not judge whose path is right.' },
+    
+    // REASON (400) - 6개
+    { id: 91, lv: 'reason', ko: '감정에 휩쓸리지 않고 논리적으로 상황을 분석하고 깊이 이해하는 능력이 있다.', en: 'I have the ability to analyze and understand situations logically without being overwhelmed by emotions.' },
+    { id: 92, lv: 'reason', ko: '복잡한 문제를 체계적으로 파악하고 합리적인 해결책을 찾는 것을 즐긴다.', en: 'I enjoy systematically understanding complex problems and finding rational solutions.' },
+    { id: 93, lv: 'reason', ko: '지식과 이해를 통해 삶의 의미와 원리를 탐구하고자 하는 깊은 욕구가 있다.', en: 'I have a deep desire to explore the meaning and principles of life through knowledge and understanding.' },
+    { id: 94, lv: 'reason', ko: '객관적인 증거와 논리에 기반하여 판단하고, 편견이나 선입견을 경계하는 편이다.', en: 'I base my judgments on objective evidence and logic, and I am wary of bias or preconceptions.' },
+    { id: 95, lv: 'reason', ko: '나는 복잡한 개념이나 추상적인 아이디어를 이해하는 데 흥미를 느끼고 관심이 있다.', en: 'I am interested in and enjoy understanding complex concepts and abstract ideas.' },
+    { id: 96, lv: 'reason', ko: '현상 뒤에 숨어있는 더 깊은 원리나 인과관계를 이해하려고 노력한다.', en: 'I try to understand the deeper principles or causal relationships hidden behind phenomena.' },
+    
+    // LOVE (500) - 6개
+    { id: 97, lv: 'love', ko: '타인의 성공이나 행복이 진심으로 기쁘게 느껴지며, 내 것처럼 기뻐할 수 있다.', en: 'I feel genuinely happy about others\' success or happiness, as if it were my own.' },
+    { id: 98, lv: 'love', ko: '조건이나 대가 없이 타인을 돌보고 섬기고 싶은 마음이 자연스럽게 생긴다.', en: 'I naturally feel a desire to care for and serve others without conditions or expectations of return.' },
+    { id: 99, lv: 'love', ko: '나 자신과 타인 모두에 대해 깊은 연민과 자비심이 자연스럽게 흘러나온다.', en: 'Deep compassion and mercy for both myself and others flow naturally from within me.' },
+];
+
+// STATE
+let state = {
+    lang: 'ko',
+    page: 0,
+    answers: {},
+    name: '',
+    date: '',
+    counselor: '',
+    shuffledQuestions: [],
+};
+
+// Fisher-Yates 셔플 함수
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+// TRANSLATIONS
+const T = {
+    hTitle: { ko: '의식 수준 측정 도구', en: 'Consciousness Level Assessment' },
+    hSub: { ko: 'David R. Hawkins 의식 지도(Map of Consciousness) 기반', en: 'Based on Dr. David R. Hawkins\' Map of Consciousness' },
+    introTitle: { ko: '시작하기', en: 'Start Assessment' },
+    introSub: { ko: '아래 정보를 입력한 후 검사를 시작하세요. 총 99문항이며 약 20-25분 소요됩니다.', en: 'Please fill in the information below to start. There are 99 questions and it takes approximately 20-25 minutes.' },
+    labelName: { ko: '이름 (내담자)', en: 'Name (Client)' },
+    labelDate: { ko: '검사 날짜', en: 'Assessment Date' },
+    labelCounselor: { ko: '상담사 이름 (선택)', en: 'Counselor Name (Optional)' },
+    noticeTitle: { ko: '📋 검사 안내', en: '📋 Instructions' },
+    noticeText: { ko: '각 문항을 읽고 현재 자신의 일반적인 삶의 패턴과 태도에 얼마나 해당하는지 솔직하게 응답해 주세요. 정답은 없으며, 가장 솔직한 답변이 가장 정확한 결과를 제공합니다.', en: 'Read each statement and honestly indicate how much it reflects your general patterns and attitudes in life. There are no right or wrong answers — the most honest response provides the most accurate result.' },
+    btnStart: { ko: '검사 시작하기 →', en: 'Start Assessment →' },
+    btnPrev: { ko: '← 이전', en: '← Previous' },
+    btnNext: { ko: '다음 →', en: 'Next →' },
+    btnSubmit: { ko: '결과 보기 →', en: 'View Results →' },
+    tabClient: { ko: '💚 내담자 결과', en: '💚 Client Result' },
+    tabClinical: { ko: '🔬 임상용 보고서', en: '🔬 Clinical Report' },
+    btnPrint: { ko: '🖨️ 인쇄 / PDF 저장', en: '🖨️ Print / Save PDF' },
+    btnRestart: { ko: '다시 시작', en: 'Restart' },
+    likert1: { ko: '전혀\n그렇지 않다', en: 'Not\nat all' },
+    likert5: { ko: '매우\n그렇다', en: 'Very\nmuch so' },
+    unanswered: { ko: '모든 문항에 응답해 주세요.', en: 'Please answer all questions.' },
+};
+
+function t(key, lang = null) {
+    const l = lang || state.lang;
+    return T[key] ? (T[key][l] || T[key].ko) : key;
+}
+
+function tq(q) {
+    return state.lang === 'ko' ? q.ko : q.en;
+}
+
+function tl(lv, field) {
+    return state.lang === 'ko' ? (lv[field + '_ko'] || lv[field]) : (lv[field + '_en'] || lv[field]);
+}
+
+function lvName(lv) {
+    return state.lang === 'ko' ? lv.ko : lv.en;
+}
+
+// LANGUAGE
+function toggleLang() {
+    state.lang = state.lang === 'ko' ? 'en' : 'ko';
+    document.getElementById('langBtn').textContent = state.lang === 'ko' ? '🌐 English' : '🌐 한국어';
+    updateAllText();
+}
+
+function updateAllText() {
+    document.getElementById('hTitle').textContent = t('hTitle');
+    document.getElementById('hSub').textContent = t('hSub');
+    document.getElementById('introTitle').textContent = t('introTitle');
+    document.getElementById('introSub').textContent = t('introSub');
+    document.getElementById('labelName').textContent = t('labelName');
+    document.getElementById('labelDate').textContent = t('labelDate');
+    document.getElementById('labelCounselor').textContent = t('labelCounselor');
+    document.getElementById('noticeTitle').textContent = t('noticeTitle');
+    document.getElementById('noticeText').textContent = t('noticeText');
+    document.getElementById('btnStart').textContent = t('btnStart');
+    document.getElementById('tabClient').textContent = t('tabClient');
+    document.getElementById('tabClinical').textContent = t('tabClinical');
+    if (document.getElementById('screen-questions') && !document.getElementById('screen-questions').classList.contains('hidden')) {
+        renderPage();
+    }
+}
+
+// SCREENS
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('hidden');
+    });
+    const screen = document.getElementById('screen-' + id);
+    if (screen) {
+        screen.classList.add('active');
+        screen.classList.remove('hidden');
+    }
+}
+
+// START
+function startAssessment() {
+    state.name = document.getElementById('inputName').value.trim() || (state.lang === 'ko' ? '내담자' : 'Client');
+    state.date = document.getElementById('inputDate').value || new Date().toISOString().split('T')[0];
+    state.counselor = document.getElementById('inputCounselor').value.trim();
+    state.page = 0;
+    state.answers = {};
+    state.shuffledQuestions = shuffleArray(QUESTIONS);
+    saveLocal();
+    showScreen('questions');
+    renderPage();
+    window.scrollTo(0, 0);
+}
+
+// PAGINATION
+function prevPage() {
+    if (state.page > 0) {
+        state.page--;
+        renderPage();
+        window.scrollTo(0, 0);
+    }
+}
+
+function nextPage() {
+    const questionsPerPage = 17;
+    const totalPages = Math.ceil(state.shuffledQuestions.length / questionsPerPage);
+    const start = state.page * questionsPerPage;
+    const end = Math.min(start + questionsPerPage, state.shuffledQuestions.length);
+    const qsOnPage = state.shuffledQuestions.slice(start, end);
+    
+    const unanswered = qsOnPage.filter(q => !state.answers[q.id]);
+    if (unanswered.length > 0) {
+        alert(t('unanswered'));
+        return;
+    }
+    
+    if (state.page < totalPages - 1) {
+        state.page++;
+        renderPage();
+        window.scrollTo(0, 0);
+    } else {
+        showResults();
+    }
+}
+
+function renderPage() {
+    const questionsPerPage = 17;
+    const totalPages = Math.ceil(state.shuffledQuestions.length / questionsPerPage);
+    const pct = Math.round(((state.page + 1) / totalPages) * 100);
+    
+    document.getElementById('progText').textContent = state.lang === 'ko' ? `페이지 ${state.page + 1} / ${totalPages}` : `Page ${state.page + 1} of ${totalPages}`;
+    document.getElementById('progPct').textContent = pct + '%';
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('pageIndicator').textContent = `${state.page + 1} / ${totalPages}`;
+    
+    const isLast = state.page === totalPages - 1;
+    const btnNext = document.getElementById('btnNext');
+    btnNext.textContent = isLast ? t('btnSubmit') : t('btnNext');
+    
+    const start = state.page * questionsPerPage;
+    const end = Math.min(start + questionsPerPage, state.shuffledQuestions.length);
+    const qsOnPage = state.shuffledQuestions.slice(start, end);
+    
+    let html = '';
+    qsOnPage.forEach((q, idx) => {
+        const sel = state.answers[q.id] || 0;
+        html += `
+            <div class="question-block ${sel === 0 ? 'unanswered' : ''}" data-qid="${q.id}">
+                <div class="q-num">Q${start + idx + 1}</div>
+                <div class="q-text">${tq(q)}</div>
+                <div class="likert-scale">
+                    ${[1, 2, 3, 4, 5].map(n => `
+                        <button class="likert-btn ${sel === n ? 'selected' : ''}" onclick="selectAnswer(${q.id}, ${n})">${n}</button>
+                    `).join('')}
+                </div>
+                <div class="likert-labels">
+                    <span>${state.lang === 'ko' ? '전혀 그렇지 않다' : 'Not at all'}</span>
+                    <span>${state.lang === 'ko' ? '매우 그렇다' : 'Very much so'}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('questionCard').innerHTML = html;
+}
+
+function selectAnswer(qid, score) {
+    state.answers[qid] = score;
+    // 해당 질문의 모든 버튼 찾기
+    const container = document.querySelector(`.question-block[data-qid="${qid}"]`);
+    if (container) {
+        const buttons = container.querySelectorAll('.likert-btn');
+        buttons.forEach((btn, idx) => {
+            btn.classList.remove('selected');
+            if (idx + 1 === score) {
+                btn.classList.add('selected');
+            }
+        });
+    }
+    saveLocal();
+}
+
+// SCORING
+function calcScores() {
+    const lvScores = {};
+    LEVELS.forEach(lv => {
+        const qs = QUESTIONS.filter(q => q.lv === lv.id);
+        const vals = qs.map(q => state.answers[q.id] || 0);
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        lvScores[lv.id] = avg;
+    });
+    
+    // Weighted score calculation
+    let weightSum = 0, weightedVal = 0;
+    LEVELS.forEach(lv => {
+        const norm = (lvScores[lv.id] - 1) / 4;
+        const w = norm * norm;
+        weightSum += w;
+        weightedVal += w * lv.val;
+    });
+    let rawScore = weightSum > 0 ? weightedVal / weightSum : 200;
+    
+    // Apply caps
+    const lowCapLevels = ['shame', 'guilt', 'apathy'];
+    lowCapLevels.forEach(id => {
+        const s = (lvScores[id] - 1) / 4;
+        if (s > 0.7) rawScore = Math.min(rawScore, 150);
+        else if (s > 0.5) rawScore = Math.min(rawScore, 200);
+    });
+    
+    if ((lvScores['grief'] - 1) / 4 > 0.7) rawScore = Math.min(rawScore, 175);
+    if ((lvScores['fear'] - 1) / 4 > 0.7) rawScore = Math.min(rawScore, 200);
+    
+    rawScore = Math.max(20, Math.min(1000, rawScore));
+    
+    let currentLevel = LEVELS[0];
+    for (let i = 0; i < LEVELS.length; i++) {
+        if (rawScore >= LEVELS[i].val) {
+            currentLevel = LEVELS[i];
+        }
+    }
+    
+    const ranked = [...LEVELS].sort((a, b) => lvScores[b.id] - lvScores[a.id]);
+    
+    return { lvScores, score: Math.round(rawScore), currentLevel, ranked };
+}
+
+async function showResults() {
+    saveLocal();
+    const results = calcScores();
+    
+    showScreen('thankyou');
+    document.getElementById('ty-status').textContent = state.lang === 'ko' ? '⏳ 전송 중...' : '⏳ Sending...';
+    document.getElementById('ty-status').style.color = '#6b6b8a';
+    
+    try {
+        const response = await fetch('/.netlify/functions/submit-consciousness', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: state.name,
+                date: state.date,
+                counselor: state.counselor,
+                score: results.score,
+                currentLevel: results.currentLevel,
+                lvScores: results.lvScores,
+                answers: state.answers,
+                lang: state.lang,
+            }),
+        });
+        
+        const result = await response.json();
+        const el = document.getElementById('ty-status');
+        if (result.ok) {
+            el.textContent = state.lang === 'ko' ? '✅ 결과가 상담사에게 전달되었습니다' : '✅ Results sent to your counselor';
+            el.style.color = '#2e8b57';
+        } else {
+            el.textContent = state.lang === 'ko' ? '✅ 검사가 완료되었습니다' : '✅ Assessment completed';
+            el.style.color = '#2e8b57';
+        }
+    } catch (e) {
+        const el = document.getElementById('ty-status');
+        el.textContent = state.lang === 'ko' ? '✅ 검사가 완료되었습니다' : '✅ Assessment completed';
+        el.style.color = '#2e8b57';
+    }
+    
+    // Show results after delay
+    setTimeout(() => {
+        showScreen('results');
+        renderClientReport(results.score, results.currentLevel, results.lvScores, results.ranked);
+        renderClinicalReport(results.score, results.currentLevel, results.lvScores, results.ranked);
+    }, 2000);
+}
+
+function switchTab(tab) {
+    ['client', 'clinical'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.remove('active');
+        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove('active');
+    });
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+}
+
+// CLIENT REPORT
+function renderClientReport(score, currentLevel, lvScores, ranked) {
+    const L = state.lang;
+    const isCritical = currentLevel.val >= 200;
+    
+    let html = `
+        <div class="card" style="border-top: 4px solid var(--gold)">
+            <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">
+                ${state.name} · ${state.date}${state.counselor ? ' · ' + (L === 'ko' ? '상담사: ' : 'Counselor: ') + state.counselor : ''}
+            </div>
+            
+            <div class="score-hero">
+                <div style="font-size: 0.9rem; opacity: .85; margin-bottom: 10px;">${L === 'ko' ? '현재 의식 수준' : 'Current Consciousness Level'}</div>
+                <div class="score-num">${score}</div>
+                <div class="score-level">${lvName(currentLevel)} (${currentLevel.val})</div>
+                <div class="score-desc">${tl(currentLevel, 'emo')}</div>
+            </div>
+            
+            <div class="client-card">
+                <div class="client-level-name">${lvName(currentLevel)}</div>
+                <div class="client-score">Level ${currentLevel.val} · ${tl(currentLevel, 'emo')}</div>
+                <div class="client-interpretation">
+                    ${getClientInterpretation(currentLevel.id, L)}
+                </div>
+            </div>
+            
+            ${isCritical
+                ? `<div class="insight-box success"><div class="insight-title">✨ ${L === 'ko' ? '임계점(200) 이상' : 'Above Critical Point (200)'}</div>${L === 'ko' ? '당신의 의식 수준은 호킨스가 제시한 임계점(200, 용기)을 넘어섰습니다. 삶에 긍정적인 힘이 작동하고 있습니다.' : 'Your consciousness level has surpassed the critical point (200, Courage) proposed by Hawkins. Positive life force is at work.'}</div>`
+                : `<div class="insight-box warn"><div class="insight-title">💛 ${L === 'ko' ? '성장의 기회' : 'Opportunity for Growth'}</div>${L === 'ko' ? '현재 의식 수준은 임계점(200, 용기) 이전 단계에 있습니다. 이것은 당신이 더 큰 성장을 향해 나아갈 수 있다는 뜻입니다.' : 'Your current consciousness level is below the critical point (200, Courage). This means you have the potential to grow toward greater awareness.'}</div>`
+            }
+            
+            <div class="next-level">
+                <h4>${L === 'ko' ? '🌱 성장의 다음 단계' : '🌱 Next Step of Growth'}</h4>
+                <p>${getGrowthTip(currentLevel.id, L)}</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('tab-client').innerHTML = html;
+}
+
+// CLINICAL REPORT
+function renderClinicalReport(score, currentLevel, lvScores, ranked) {
+    const L = state.lang;
+    const top3 = ranked.slice(0, 3);
+    
+    let html = `
+        <div class="card" style="border-top: 4px solid var(--primary)">
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 16px;">
+                🔬 ${L === 'ko' ? '임상용 의식 수준 보고서' : 'Clinical Consciousness Assessment Report'}
+            </div>
+            
+            <div class="score-hero">
+                <div style="font-size: 0.9rem; opacity: .85; margin-bottom: 10px;">${L === 'ko' ? '의식 수준 점수' : 'Consciousness Level Score'}</div>
+                <div class="score-num">${score}</div>
+                <div class="score-level">${lvName(currentLevel)} · ${currentLevel.val}</div>
+                <div class="score-desc">${L === 'ko' ? '세계관: ' : 'Worldview: '}${tl(currentLevel, 'view')}</div>
+            </div>
+            
+            <div style="background: #F0FFF6; border: 1px solid #BDECD0; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
+                <div style="font-weight: 700; font-size: 0.9rem; color: #2E7D52; margin-bottom: 10px;">✅ ${L === 'ko' ? '강점 레벨 TOP 3' : 'Strength Levels TOP 3'}</div>
+                ${top3.map((lv, i) => `
+                    <div style="margin-bottom: 8px;">
+                        <span style="display: inline-block; background: #DDFAEC; color: #2E7D52; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                            ${['🥇', '🥈', '🥉'][i]} ${lvName(lv)} (${lv.val})
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="insight-box success" style="margin-bottom: 20px;">
+                <div class="insight-title">${L === 'ko' ? '상담 개입 포인트' : 'Counseling Intervention Points'}</div>
+                <p style="font-size: 0.88rem; margin-top: 8px; line-height: 1.7;">
+                    ${getInterventionStrategy(currentLevel.id, L)}
+                </p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('tab-clinical').innerHTML = html;
+}
+
+// HELPERS
+function getClientInterpretation(levelId, lang) {
+    const interpretations = {
+        shame: { ko: '지금 이 순간, 당신 안에는 깊은 자기 인식이 존재합니다. 수치심을 느끼는 것은 당신이 더 나은 자신을 갈망한다는 증거이기도 합니다. 이 자리에서 자기 자신을 향한 따뜻한 눈길을 시작할 수 있습니다.', en: 'At this moment, deep self-awareness exists within you. Feeling shame can also be evidence of your longing for a better self. From this place, you can begin turning a gentle gaze toward yourself.' },
+        guilt: { ko: '책임감을 느끼는 당신은 도덕적 감수성이 있는 사람입니다. 이제 그 책임감을 자기 처벌이 아닌 성장의 자원으로 전환하는 여정을 시작할 수 있습니다.', en: 'You are someone with moral sensitivity — feeling responsibility shows you care. Now you can begin transforming that sense of responsibility from self-punishment into a resource for growth.' },
+        apathy: { ko: '지금의 무기력함은 쉬어야 할 필요를 알리는 신호일 수 있습니다. 작은 한 걸음부터 시작해도 괜찮습니다. 당신 안에 아직 꺼지지 않은 불씨가 있습니다.', en: 'Your current helplessness may be a signal that you need rest. It is okay to start with just a small step. There is still an ember within you that has not gone out.' },
+        grief: { ko: '슬픔은 당신이 무언가를 깊이 사랑했다는 증거입니다. 이 감정을 충분히 느끼고 표현하는 것이 치유의 시작입니다. 당신의 슬픔은 유효하고 중요합니다.', en: 'Grief is evidence that you have loved something deeply. Fully feeling and expressing this emotion is the beginning of healing. Your sadness is valid and important.' },
+        fear: { ko: '조심스럽고 신중한 당신은 지혜로운 사람입니다. 두려움 너머에는 새로운 가능성이 기다리고 있으며, 작은 용기의 행동들이 큰 변화를 만들어냅니다.', en: 'You are a thoughtful and careful person. Beyond fear, new possibilities await, and small acts of courage create great change.' },
+        desire: { ko: '강한 열망은 삶의 원동력이 됩니다. 지금 원하는 것들이 진정으로 당신을 행복하게 해줄지 탐구해보는 것이 성장의 기회입니다.', en: 'Strong desire is the driving force of life. Exploring whether what you currently want will truly make you happy is an opportunity for growth.' },
+        anger: { ko: '당신 안의 분노는 경계와 정의에 대한 감각에서 나옵니다. 이 에너지를 건설적인 방향으로 전환할 때, 강력한 변화의 힘이 됩니다.', en: 'The anger within you comes from your sense of boundaries and justice. When this energy is channeled constructively, it becomes a powerful force for change.' },
+        pride: { ko: '자신감과 자부심은 소중한 자산입니다. 이제 그 힘을 겸손함과 결합할 때, 당신의 영향력은 더욱 깊어지고 넓어질 것입니다.', en: 'Confidence and pride are valuable assets. When you combine that strength with humility, your influence will deepen and broaden.' },
+        courage: { ko: '용기의 문턱에 선 당신은 임계점을 넘어선 의식 수준에 있습니다. 이 내면의 힘을 신뢰하고 계속 나아가세요. 삶은 당신을 지지합니다.', en: 'Standing at the threshold of courage, you are at a consciousness level that has crossed the critical point. Trust this inner strength and keep moving forward. Life supports you.' },
+        neutral: { ko: '유연하고 균형 잡힌 당신은 삶의 다양한 상황을 잘 헤쳐나갑니다. 이 평온함을 기반으로 더 깊은 성장의 여정을 시작할 준비가 되어 있습니다.', en: 'Flexible and balanced, you navigate life\'s varied situations well. Based on this calm, you are ready to begin a journey of deeper growth.' },
+        willing: { ko: '성장을 향한 열린 마음과 의지가 빛납니다. 당신은 더 나은 삶을 향한 여정에서 이미 좋은 속도로 나아가고 있습니다.', en: 'Your open heart and willingness to grow shines brightly. You are already progressing at a good pace on your journey toward a better life.' },
+        accept: { ko: '수용의 힘은 진정한 자유를 가져다줍니다. 있는 그대로를 받아들이는 당신의 능력은 삶을 더욱 풍요롭게 만들어갑니다.', en: 'The power of acceptance brings true freedom. Your ability to receive things as they are enriches your life more and more.' },
+        reason: { ko: '명철한 이해력과 논리적 사고는 귀한 선물입니다. 이제 그 이성의 힘을 가슴의 지혜와 연결할 때, 더 온전한 앎이 열립니다.', en: 'Clear understanding and logical thinking are precious gifts. When you connect that power of reason with the wisdom of the heart, a more complete knowing opens.' },
+        love: { ko: '사랑의 의식 수준에서 삶은 아름답고 풍요롭습니다. 당신이 나누는 사랑이 세상을 치유하고 있습니다. 이 축복을 계속 나누어 주세요.', en: 'At the consciousness level of love, life is beautiful and abundant. The love you share is healing the world. Please continue to share this blessing.' },
+        joy: { ko: '당신 안의 기쁨은 그 자체로 세상에 빛을 더합니다. 이 내면의 충만함은 타인에게도 자연스럽게 흘러갑니다. 당신은 살아있는 선물입니다.', en: 'The joy within you adds light to the world by its very existence. This inner fullness naturally flows to others as well. You are a living gift.' },
+        peace: { ko: '깊은 평화 속에 거하는 당신은 주변에 조용한 축복의 영향력을 미칩니다. 이 고요한 광명이 계속 빛나기를 바랍니다.', en: 'Dwelling in deep peace, you exert a quiet blessing influence on those around you. May this silent luminosity continue to shine.' },
+        enlight: { ko: '순수 의식의 경험이 있는 당신의 삶은 그 자체로 인류에게 귀한 선물입니다. 이 깊은 앎이 세상에 계속 흘러가기를 바랍니다.', en: 'Your life, with its experience of pure consciousness, is itself a precious gift to humanity. May this deep knowing continue to flow into the world.' },
+    };
+    return interpretations[levelId]?.[lang] || '당신의 여정을 축하합니다.';
+}
+
+function getGrowthTip(levelId, lang) {
+    const tips = {
+        shame: { ko: '자신을 향한 비판적 목소리를 조금씩 부드럽게 하는 연습을 해보세요. 작은 자기 연민의 행동들이 변화를 만듭니다.', en: 'Practice gradually softening the critical voice toward yourself. Small acts of self-compassion create change.' },
+        guilt: { ko: '자신을 처벌하는 대신, 잘못에서 배우고 앞으로 나아가는 방식을 탐구해 보세요.', en: 'Instead of punishing yourself, explore learning from mistakes and moving forward.' },
+        apathy: { ko: '하루 한 가지, 아주 작은 행동을 시도해보세요. 의지의 작은 불꽃이 모든 것을 바꿉니다.', en: 'Try one very small action each day. A small spark of will can change everything.' },
+        grief: { ko: '슬픔을 억누르지 말고 안전한 공간에서 충분히 표현해 보세요. 표현된 감정은 흘러갑니다.', en: 'Don\'t suppress grief — express it fully in a safe space. Expressed emotions flow and release.' },
+        fear: { ko: '두려움에 맞서 조금씩 행동해보세요. 각각의 작은 용기가 두려움을 줄여갑니다.', en: 'Gradually take action in the face of fear. Each small act of courage reduces fear.' },
+        desire: { ko: '외부의 것에서 내면의 충만함을 찾는 연습을 시작해보세요. 진정한 만족은 내면에 있습니다.', en: 'Begin practicing finding inner fulfillment rather than seeking it in external things.' },
+        anger: { ko: '분노의 에너지를 창의적 행동과 건강한 경계 설정으로 전환해보세요.', en: 'Channel the energy of anger into creative action and healthy boundary-setting.' },
+        pride: { ko: '\'나는 틀릴 수도 있다\'는 가능성에 마음을 열어보세요. 겸손함이 더 큰 힘을 줍니다.', en: 'Open your heart to the possibility of being wrong. Humility gives greater strength.' },
+        courage: { ko: '이미 가진 내면의 힘을 더 넓은 삶의 영역에 적용해보세요. 당신은 할 수 있습니다.', en: 'Apply the inner strength you already have to broader areas of life. You can do this.' },
+        neutral: { ko: '유연함에서 더 나아가 삶의 다양한 국면들에 대한 깊은 신뢰를 개발해보세요.', en: 'Moving beyond flexibility, develop deeper trust in the various phases of life.' },
+        willing: { ko: '성장의 의지를 삶의 더 깊은 의미 탐구와 연결해보세요.', en: 'Connect your will to grow with exploring deeper meaning in life.' },
+        accept: { ko: '용서와 수용을 자신을 넘어 더 넓은 관계와 상황으로 확장해보세요.', en: 'Expand forgiveness and acceptance beyond yourself to wider relationships and situations.' },
+        reason: { ko: '지적 이해를 마음의 경험과 연결하는 명상, 예술, 봉사 활동을 탐색해보세요.', en: 'Explore meditation, art, or service to connect intellectual understanding with heart experience.' },
+        love: { ko: '사랑의 실천을 더 무조건적으로, 더 자연스럽게 흘러가도록 허용해보세요.', en: 'Allow the practice of love to become more unconditional and more naturally flowing.' },
+        joy: { ko: '이미 당신 안에 있는 기쁨을 신뢰하고 깊이 쉬어가세요.', en: 'Trust the joy already within you and rest deeply in it.' },
+        peace: { ko: '존재 그 자체로 완전합니다. 이 경험을 그저 있는 그대로 허용하세요.', en: 'Complete as existence itself. Simply allow this experience to be as it is.' },
+        enlight: { ko: '당신의 존재 자체가 세상에 대한 선물입니다.', en: 'Your very existence is a gift to the world.' },
+    };
+    return tips[levelId]?.[lang] || '계속 성장해 주세요.';
+}
+
+function getInterventionStrategy(levelId, lang) {
+    const strategies = {
+        shame: { ko: '자기 연민 개입, 현실적 기대치 재설정, 작은 성공 경험 축적', en: 'Self-compassion intervention, realistic expectation adjustment, accumulating small success experiences' },
+        guilt: { ko: '도덕성 재구성, 자기 용서 작업, 성장 기반 접근', en: 'Reframing morality, self-forgiveness work, growth-based approach' },
+        apathy: { ko: '안전감 구축, 매우 작은 행동 목표, 의미 회복, 정신과 의료진 의뢰 고려', en: 'Building safety, very small behavioral goals, meaning recovery, psychiatric referral consideration' },
+        grief: { ko: '상실감 표현과 수용, 애도 과정 지원, 의미 재구성', en: 'Expressing and accepting loss, supporting grieving process, reframing meaning' },
+        fear: { ko: '점진적 노출, 자기 효능감 증진, ACT 또는 EMDR 고려', en: 'Gradual exposure, enhancing self-efficacy, considering ACT or EMDR' },
+        desire: { ko: '욕망과 행복의 관계 탐구, 충동 통제 기술, 만족도 재평가', en: 'Exploring relationship between desire and happiness, impulse control techniques, satisfaction reassessment' },
+        anger: { ko: '감정 조절 기술, 공감 능력 개발, 건설적 표현 방식', en: 'Emotion regulation skills, empathy development, constructive expression methods' },
+        pride: { ko: '관점 확장, 공감 능력 개발, 겸손함 연습', en: 'Perspective expansion, empathy development, humility practice' },
+        courage: { ko: '강점 활용, 목표 설정과 달성, 자기 효능감 강화', en: 'Leveraging strengths, goal setting and achievement, reinforcing self-efficacy' },
+        neutral: { ko: '유연성 강화, 다양한 관점 수용, 상황 적응력 개발', en: 'Strengthening flexibility, accepting diverse perspectives, developing situational adaptability' },
+        willing: { ko: '강점 활용, 의식 확장, 의미 탐구', en: 'Leveraging strengths, consciousness expansion, meaning exploration' },
+        accept: { ko: '용서와 수용 심화, 영적 탐구, 타인과의 관계 확대', en: 'Deepening forgiveness and acceptance, spiritual exploration, expanding relationships' },
+        reason: { ko: '논리적 사고 강화, 의미 탐구, 이성과 마음의 통합', en: 'Strengthening logical thinking, meaning exploration, integrating reason and heart' },
+        love: { ko: '사랑 실천 심화, 영적 경험 탐색, 봉사 활동 격려', en: 'Deepening love practice, exploring spiritual experiences, encouraging service' },
+        joy: { ko: '감사 연습, 내면 충만감 유지, 영적 성장 지원', en: 'Gratitude practice, maintaining inner fullness, supporting spiritual growth' },
+        peace: { ko: '영적 깊이 탐구, 명상 심화, 초월적 경험 통합', en: 'Exploring spiritual depths, deepening meditation, integrating transcendent experiences' },
+        enlight: { ko: '깨달음의 안정화, 영적 지도자 연결, 사명 탐색', en: 'Stabilizing enlightenment, connecting with spiritual guides, exploring purpose' },
+    };
+    return strategies[levelId]?.[lang] || '맞춤형 상담 개입이 권장됩니다.';
+}
+
+// LOCAL STORAGE
+function saveLocal() {
+    try {
+        localStorage.setItem('consciousness_assessment', JSON.stringify({
+            answers: state.answers,
+            name: state.name,
+            date: state.date,
+            counselor: state.counselor,
+            page: state.page,
+            lang: state.lang,
+        }));
+    } catch (e) {}
+}
+
+function loadLocal() {
+    // localStorage 자동 로드 비활성화
+    // (새로 시작할 때만 로드하도록 변경)
+    // try {
+    //     const d = JSON.parse(localStorage.getItem('consciousness_assessment') || '{}');
+    //     if (d.answers) state.answers = d.answers;
+    //     if (d.lang) state.lang = d.lang;
+    //     if (d.name) document.getElementById('inputName').value = d.name;
+    //     if (d.date) document.getElementById('inputDate').value = d.date;
+    //     if (d.counselor) document.getElementById('inputCounselor').value = d.counselor;
+    // } catch (e) {}
+}
+
+// PDF 저장 함수
+async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = state.lang === 'ko' ? '🔄 생성 중...' : '🔄 Generating...';
+    button.disabled = true;
+    
+    try {
+        // 결과 화면을 canvas로 변환
+        const element = document.getElementById('tab-client') || document.querySelector('.tab-content.active');
+        if (!element) {
+            alert(state.lang === 'ko' ? 'PDF를 생성할 수 없습니다.' : 'Cannot generate PDF.');
+            return;
+        }
+        
+        // html2canvas로 화면을 이미지로 변환
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+        });
+        
+        // jsPDF 생성 (A4 크기)
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+        });
+        
+        const imgWidth = 210; // A4 너비 (mm)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const pageHeight = 297; // A4 높이 (mm)
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        // 여러 페이지에 걸쳐 이미지 추가
+        const imgData = canvas.toDataURL('image/png');
+        while (heightLeft >= 0) {
+            const heightToPrint = Math.min(heightLeft, pageHeight);
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, heightToPrint);
+            heightLeft -= pageHeight;
+            position -= pageHeight;
+            if (heightLeft > 0) {
+                pdf.addPage();
+            }
+        }
+        
+        // PDF 다운로드
+        const filename = `${state.name || 'Assessment'}_Consciousness_${state.date || new Date().toISOString().split('T')[0]}.pdf`;
+        pdf.save(filename);
+        
+    } catch (error) {
+        console.error('PDF 생성 오류:', error);
+        alert(state.lang === 'ko' ? 'PDF 생성 중 오류가 발생했습니다.' : 'Error generating PDF.');
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+function restartAssessment() {
+    if (confirm(state.lang === 'ko' ? '검사를 처음부터 다시 시작하시겠습니까?' : 'Do you want to restart the assessment from the beginning?')) {
+        state.answers = {};
+        state.page = 0;
+        localStorage.removeItem('consciousness_assessment');
+        showScreen('intro');
+    }
+}
+
+// INIT
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('inputDate').value = new Date().toISOString().split('T')[0];
+    loadLocal();
+    if (state.lang === 'en') {
+        document.getElementById('langBtn').textContent = '🌐 한국어';
+        updateAllText();
+    }
+});
+</script>
+
+</body>
+</html>

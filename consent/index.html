@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>상담 치료 동의서 — Love Inmost</title>
+<style>
+  :root {
+    --primary: #3d6b8e;
+    --primary-light: #5a8aad;
+    --primary-dark: #2a4d68;
+    --accent: #7db8a4;
+    --accent-light: #a8d4c4;
+    --bg: #f7f5f2;
+    --card: #ffffff;
+    --text: #2c2c2c;
+    --text-muted: #6b7280;
+    --border: #e2ddd8;
+    --danger: #dc2626;
+    --success: #16a34a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .site-header {
+    background: var(--primary-dark);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .site-header .logo { color: white; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .site-header .subtitle { color: rgba(255,255,255,0.6); font-size: 13px; }
+
+  .container { max-width: 740px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  .page-title {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .page-title h1 { font-size: 22px; color: var(--primary-dark); margin-bottom: 6px; }
+  .page-title p { font-size: 14px; color: var(--text-muted); }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .card h2 {
+    font-size: 15px;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card p, .card li {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .card ul { padding-left: 18px; }
+  .card ul li { margin-bottom: 4px; }
+
+  .section-num {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .card h2 { display: flex; align-items: center; }
+
+  /* 입력 필드 */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    background: white;
+    color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(61,107,142,0.1);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+  /* 서명 패드 */
+  .sig-wrap {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+    position: relative;
+    margin-top: 8px;
+  }
+  .sig-wrap canvas {
+    display: block;
+    width: 100%;
+    height: 160px;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .sig-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 13px;
+    color: #bbb;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sig-label.hidden { opacity: 0; }
+  .sig-clear {
+    position: absolute;
+    top: 8px; right: 10px;
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .sig-clear:hover { background: #f0f0f0; }
+
+  /* 동의 체크 */
+  .agree-box {
+    background: #f0f7f4;
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .agree-box p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* 제출 버튼 */
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-submit:hover { background: var(--primary-dark); }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* 성공 화면 */
+  .success-screen {
+    display: none;
+    text-align: center;
+    background: white;
+    border-radius: 12px;
+    padding: 48px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .success-screen .icon { font-size: 56px; margin-bottom: 16px; }
+  .success-screen h2 { font-size: 20px; color: var(--primary-dark); margin-bottom: 10px; }
+  .success-screen p { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
+
+  .footer-quote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 32px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div>
+    <div class="logo">LOVE INMOST</div>
+    <div class="subtitle">Life Coaching &amp; Counselling</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="page-title">
+    <h1>상담 치료 동의서</h1>
+    <p>아래 내용을 읽으신 후 서명해 주세요</p>
+  </div>
+
+  <!-- 성공 화면 -->
+  <div class="success-screen" id="successScreen">
+    <div class="icon">✅</div>
+    <h2>동의서 제출 완료</h2>
+    <p>동의서가 성공적으로 제출되었습니다.<br>상담자가 곧 확인하겠습니다.<br><br>감사합니다 🌿</p>
+  </div>
+
+  <form id='consentForm' method='POST' name='consent-ko'>
+    <input type="hidden" name="form-name" value="consent-ko">
+    <input type="hidden" name="bot-field" style="display:none">
+    <input type="hidden" name="signature_client" id="sigClientData">
+
+    <!-- 내담자 정보 -->
+    <div class="card">
+      <h2><span class="section-num">i</span>내담자 기본 정보</h2>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group">
+          <label for="name">이름 *</label>
+          <input type="text" id="name" name="name" placeholder="성함을 입력하세요" required>
+        </div>
+        <div class="form-group">
+          <label for="consent_date">동의 날짜 *</label>
+          <input type="date" id="consent_date" name="consent_date" required>
+        </div>
+      </div>
+    </div>
+
+    <!-- 조항 1 -->
+    <div class="card">
+      <h2><span class="section-num">1</span>상담의 목적 및 과정 안내</h2>
+      <p>본 상담은 개인의 심리적, 정서적, 관계적 어려움을 이해하고 회복하기 위해 상담자와 내담자가 함께 참여하는 협력적인 과정입니다. 상담자는 내담자의 이야기를 비판 없이 경청하며, 통찰과 변화를 돕습니다.</p>
+    </div>
+
+    <!-- 조항 2 -->
+    <div class="card">
+      <h2><span class="section-num">2</span>상담자의 자격 및 상담 접근 방식</h2>
+      <p>상담자는 호주와 대한민국의 공인 자격을 보유한 전문 상담자로서, 통합적 접근(심리학적, 관계중심, 영성적 통찰 포함)을 통해 내담자에게 적절한 방법으로 상담을 제공합니다. 필요시 슈퍼비전(전문가 감독)과 협의를 거쳐 상담의 질을 유지합니다.</p>
+    </div>
+
+    <!-- 조항 3 -->
+    <div class="card">
+      <h2><span class="section-num">3</span>기대 효과와 한계</h2>
+      <p>상담을 통해 자기 이해, 감정 조절, 관계 회복 등의 긍정적인 변화를 경험할 수 있습니다. 그러나 상담 효과는 개인마다 차이가 있으며, 구체적인 결과를 보장할 수는 없습니다.</p>
+    </div>
+
+    <!-- 조항 4 -->
+    <div class="card">
+      <h2><span class="section-num">4</span>상담 중 발생할 수 있는 정서적 반응</h2>
+      <p>상담 과정에서 과거의 기억이나 감정이 떠오르며 일시적인 불편감이나 슬픔, 분노, 불안 등이 생길 수 있습니다. 이는 자연스러운 치료적 반응이며, 상담자는 이러한 감정을 안전하게 다룰 수 있도록 돕습니다.</p>
+    </div>
+
+    <!-- 조항 5 -->
+    <div class="card">
+      <h2><span class="section-num">5</span>비밀보장 및 예외 조항</h2>
+      <p>상담 내용은 엄격하게 비밀로 유지되며, 내담자의 동의 없이 외부에 공개되지 않습니다. 단, 다음과 같은 경우에는 예외적으로 관련 기관에 알릴 의무가 있습니다:</p>
+      <ul style="margin-top:8px">
+        <li>자살 또는 타해의 위험이 명백할 경우</li>
+        <li>아동, 노인, 장애인 학대가 의심될 경우</li>
+        <li>법원의 명령이나 법적 요청이 있을 경우</li>
+      </ul>
+    </div>
+
+    <!-- 조항 6 -->
+    <div class="card">
+      <h2><span class="section-num">6</span>개인정보 및 기록 관리</h2>
+      <p>상담 중 수집된 개인정보 및 상담 기록은 안전하게 보관되며, 호주 법에 따라 최소 7년간 보존된 후 폐기됩니다. 내담자는 본인의 기록 열람을 요청할 수 있으나, 일부 제한이 있을 수 있습니다.</p>
+    </div>
+
+    <!-- 조항 7 -->
+    <div class="card">
+      <h2><span class="section-num">7</span>상담 녹음 동의</h2>
+      <p>상담자는 더 높고 효율적인 상담 제공을 위해 상담 내용을 녹음할 수 있습니다. 녹음된 자료는 외부에 유출되지 않으며, 철저히 보안 관리되고, 상담 종료 후 즉시 안전하게 폐기됩니다.</p>
+    </div>
+
+    <!-- 조항 8 -->
+    <div class="card">
+      <h2><span class="section-num">8</span>상담 비용 및 결제, 취소 규정</h2>
+      <ul>
+        <li>상담 비용은 상담 유형에 따라 사전 안내되며, 모든 금액에 GST(10%)가 별도 부과됩니다.</li>
+        <li>결제는 상담 당일 이전 또는 직후 카드, 계좌이체로 가능합니다.</li>
+        <li>예약된 시간 24시간 이내 취소 또는 불참 시 일정 수수료가 발생할 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <!-- 조항 9 -->
+    <div class="card">
+      <h2><span class="section-num">9</span>위기 상황 시 대응 방침</h2>
+      <p>상담은 비응급 상황을 위한 심리적 지원입니다. 생명에 위협이 있는 위급 상황에서는 즉시 <strong>000(응급 구조)</strong>, <strong>Lifeline(13 11 14)</strong> 등의 기관에 연락하시기 바랍니다.</p>
+    </div>
+
+    <!-- 조항 10 -->
+    <div class="card">
+      <h2><span class="section-num">10</span>상담자의 슈퍼비전 및 전문가 협의</h2>
+      <p>상담자는 정기적으로 슈퍼비전(전문가 감독)을 통해 상담의 윤리성과 전문성을 유지합니다. 이 과정에서 내담자의 신상정보는 비식별화되어 사용되며, 개인 정보는 외부에 유출되지 않습니다.</p>
+    </div>
+
+    <!-- 조항 11 -->
+    <div class="card">
+      <h2><span class="section-num">11</span>동의 철회 및 상담 종료</h2>
+      <p>내담자는 상담 과정 중 언제든지 상담을 중단하거나 철회할 수 있습니다. 상담자는 상담 종료 또는 중단 결정에 대해 존중하며, 필요시 적절한 대안을 안내할 수 있습니다.</p>
+    </div>
+
+    <!-- 서명 -->
+    <div class="card">
+      <h2>✍️ 내담자 서명</h2>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px">아래 박스에 직접 서명해 주세요 (손가락 또는 마우스)</p>
+      <div class="sig-wrap">
+        <canvas id="sigCanvas" width="700" height="160"></canvas>
+        <span class="sig-label" id="sigHint">여기에 서명하세요</span>
+        <button type="button" class="sig-clear" onclick="clearSig()">지우기</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-top:8px">* 서명을 반드시 완료해 주세요</p>
+    </div>
+
+    <!-- 최종 동의 -->
+    <div class="agree-box">
+      <p>상기 내용을 충분히 이해하였으며, 상담에 자발적으로 참여하고 동의합니다.</p>
+      <label class="checkbox-label">
+        <input type="checkbox" id="agreeCheck" required>
+        <span>위 내용을 모두 읽고 이해하였으며, 동의합니다</span>
+      </label>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">동의서 제출하기</button>
+  </form>
+
+  <p class="footer-quote">"Love Inmost with all your heart, all your soul and all your mind"</p>
+</div>
+
+<script>
+// 오늘 날짜 자동 설정
+document.getElementById('consent_date').valueAsDate = new Date();
+
+// 서명 패드
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('sigHint');
+let drawing = false;
+let hasSig = false;
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  if (e.touches) {
+    return {
+      x: (e.touches[0].clientX - rect.left) * scaleX,
+      y: (e.touches[0].clientY - rect.top) * scaleY
+    };
+  }
+  return {
+    x: (e.clientX - rect.left) * scaleX,
+    y: (e.clientY - rect.top) * scaleY
+  };
+}
+
+canvas.addEventListener('mousedown', e => { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', e => {
+  if (!drawing) return;
+  const p = getPos(e);
+  ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a1a1a';
+  ctx.lineTo(p.x, p.y); ctx.stroke();
+  if (!hasSig) { hasSig = true; hint.classList.add('hidden'); }
+});
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mouseleave', () => drawing = false);
+
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!drawing) return;
+  const p = getPos(e);
+  ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#1a1a1a';
+  ctx.lineTo(p.x, p.y); ctx.stroke();
+  if (!hasSig) { hasSig = true; hint.classList.add('hidden'); }
+}, { passive: false });
+canvas.addEventListener('touchend', () => drawing = false);
+
+function clearSig() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSig = false;
+  hint.classList.remove('hidden');
+}
+
+// 폼 제출
+document.getElementById('consentForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  if (!hasSig) { alert('서명을 해주세요.'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '제출 중...';
+
+  // 서명 이미지: PNG 원본 그대로 (Function 직접 전송이라 크기 제한 없음)
+  const sigData = canvas.toDataURL('image/png');
+
+  fetch('/.netlify/functions/submit-consent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      formName: 'consent-ko',
+      name: document.getElementById('name').value,
+      consent_date: document.getElementById('consent_date').value,
+      signature: sigData,
+    }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ok) {
+        document.getElementById('consentForm').style.display = 'none';
+        document.getElementById('successScreen').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        throw new Error('제출 실패');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = '동의서 제출하기';
+      alert('제출 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    });
+});
+</script>
+</body>
+</html>

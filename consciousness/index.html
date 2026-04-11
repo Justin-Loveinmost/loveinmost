@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>의식 수준 측정 도구 | Consciousness Level Assessment</title>
+    <title>L.O.C 측정 검사 | Assessment of Level of Consciousness</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <!-- PDF 생성 라이브러리 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -16,20 +16,20 @@
         }
 
         :root {
-            --primary: #6C3FC5;
-            --primary-light: #9B6DDD;
-            --primary-dark: #4A2890;
+            --primary: #C96A8A;
+            --primary-light: #E49BB4;
+            --primary-dark: #A04870;
             --gold: #C9A84C;
             --gold-light: #E8C97A;
-            --indigo: #3D3B8E;
-            --bg: #F7F5FF;
+            --indigo: #B06080;
+            --bg: #FFF5F8;
             --card: #FFFFFF;
-            --text: #1A1035;
-            --muted: #6B6B8A;
-            --border: #E0D9F5;
+            --text: #2D1A22;
+            --muted: #8A6B76;
+            --border: #F5D9E4;
             --success: #2E8B57;
             --warn: #D4704A;
-            --shadow: 0 4px 24px rgba(108, 63, 197, 0.10);
+            --shadow: 0 4px 24px rgba(180, 80, 120, 0.10);
         }
 
         body {
@@ -147,7 +147,7 @@
             border-radius: 10px;
             font-size: 0.96rem;
             color: var(--text);
-            background: #FAFAFF;
+            background: #FFF8FA;
             font-family: inherit;
             transition: all 0.3s ease;
             outline: none;
@@ -157,7 +157,7 @@
         .form-group textarea:focus {
             border-color: var(--primary-light);
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(108, 63, 197, 0.10);
+            box-shadow: 0 0 0 4px rgba(180, 80, 120, 0.10);
         }
 
         .flex-row {
@@ -188,12 +188,12 @@
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), var(--indigo));
             color: #fff;
-            box-shadow: 0 4px 14px rgba(108, 63, 197, 0.28);
+            box-shadow: 0 4px 14px rgba(180, 80, 120, 0.28);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 63, 197, 0.35);
+            box-shadow: 0 6px 20px rgba(180, 80, 120, 0.35);
         }
 
         .btn-primary:active {
@@ -262,7 +262,7 @@
         .question-block {
             margin-bottom: 28px;
             padding: 18px;
-            background: #FAFAFF;
+            background: #FFF8FA;
             border-radius: 12px;
             border: 1px solid var(--border);
             transition: all 0.3s ease;
@@ -335,7 +335,7 @@
             background: var(--primary);
             border-color: var(--primary);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(108, 63, 197, 0.4);
+            box-shadow: 0 4px 12px rgba(180, 80, 120, 0.4);
         }
 
         .likert-labels {
@@ -462,7 +462,7 @@
 
         /* INSIGHT BOX */
         .insight-box {
-            background: linear-gradient(135deg, #F5F0FF, #EDE8FF);
+            background: linear-gradient(135deg, #FFF0F5, #FFE4EE);
             border-left: 5px solid var(--primary);
             padding: 16px 18px;
             border-radius: 0 12px 12px 0;
@@ -488,7 +488,7 @@
 
         /* CLIENT CARD */
         .client-card {
-            background: linear-gradient(135deg, #F7F5FF, #EDE8FF);
+            background: linear-gradient(135deg, #FFF5F8, #FFE4EE);
             border: 1px solid var(--border);
             border-radius: 14px;
             padding: 24px;
@@ -647,8 +647,8 @@
     <div class="app-header">
         <button class="lang-btn" onclick="toggleLang()" id="langBtn">🌐 English</button>
         <div class="header-content">
-            <h1 id="hTitle">의식 수준 측정 도구</h1>
-            <p id="hSub">David R. Hawkins 의식 지도(Map of Consciousness) 기반</p>
+            <h1 id="hTitle">L.O.C 측정 검사</h1>
+            <p id="hSub">Dr. David R. Hawkins 의 Map of Consciousness를 기반으로 한 Assessment of Level of Consciousness</p>
         </div>
     </div>
 
@@ -656,17 +656,37 @@
     <div id="screen-intro" class="screen active">
         <div class="card">
             <h2 class="section-title" id="introTitle">시작하기</h2>
-            <p class="section-sub" id="introSub">아래 정보를 입력한 후 검사를 시작하세요. 총 99문항이며 약 20-25분 소요됩니다.</p>
+            <p class="section-sub" id="introSub">아래 정보를 입력한 후 검사를 시작하세요. 약 10~15분 정도 소요됩니다.</p>
 
             <div class="flex-row">
                 <div class="form-group">
-                    <label id="labelName">이름 (내담자)</label>
-                    <input type="text" id="inputName" placeholder="홍길동">
+                    <label id="labelName">이름 <span style="color:var(--warn)">*</span></label>
+                    <input type="text" id="inputName" placeholder="홍길동" required>
                 </div>
                 <div class="form-group">
                     <label id="labelDate">검사 날짜</label>
                     <input type="date" id="inputDate">
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label id="labelGender">성별 <span style="color:var(--warn)">*</span></label>
+                <select id="inputGender" required style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:0.96rem;color:var(--text);background:#FFF8FA;font-family:inherit;transition:all 0.3s ease;outline:none;appearance:none;-webkit-appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A6B76' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 14px center;">
+                    <option value="" disabled selected id="genderPlaceholder">선택해 주세요</option>
+                    <option value="male" id="genderMale">남성</option>
+                    <option value="female" id="genderFemale">여성</option>
+                    <option value="undisclosed" id="genderUndisclosed">명시 안함</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label id="labelPhone">핸드폰 번호 <span style="color:var(--warn)">*</span></label>
+                <input type="tel" id="inputPhone" placeholder="010-0000-0000" required>
+            </div>
+
+            <div class="form-group">
+                <label id="labelEmail">이메일 주소 <span style="color:var(--warn)">*</span></label>
+                <input type="email" id="inputEmail" placeholder="example@email.com" required>
             </div>
 
             <div class="form-group">
@@ -680,6 +700,7 @@
             </div>
 
             <button class="btn btn-primary btn-lg" onclick="startAssessment()" id="btnStart">검사 시작하기 →</button>
+            <p style="text-align:center;font-size:0.78rem;color:var(--muted);margin-top:16px;">© 2026 Love Inmost Life Coaching &amp; Counselling. All rights reserved.</p>
         </div>
     </div>
 
@@ -715,7 +736,7 @@
         <div id="tab-clinical" class="tab-content"></div>
 
         <div class="nav-btns no-print" style="margin-top: 24px;">
-            <button class="btn btn-outline" onclick="downloadPDF()" id="btnPrint" style="background: linear-gradient(135deg, #4a2890, #6c3fc5); color: white; border: none;">📥 PDF로 다운로드</button>
+            <button class="btn btn-outline" onclick="downloadPDF()" id="btnPrint" style="background: linear-gradient(135deg, #A04870, #C96A8A); color: white; border: none;">📥 PDF로 다운로드</button>
             <button class="btn btn-outline" onclick="window.print()" id="btnPrintHtml">🖨️ 인쇄하기</button>
             <button class="btn btn-primary" onclick="restartAssessment()" id="btnRestart">다시 시작</button>
         </div>
@@ -911,12 +932,19 @@ function shuffleArray(array) {
 
 // TRANSLATIONS
 const T = {
-    hTitle: { ko: '의식 수준 측정 도구', en: 'Consciousness Level Assessment' },
-    hSub: { ko: 'David R. Hawkins 의식 지도(Map of Consciousness) 기반', en: 'Based on Dr. David R. Hawkins\' Map of Consciousness' },
+    hTitle: { ko: 'L.O.C 측정 검사', en: 'L.O.C Assessment' },
+    hSub: { ko: 'Dr. David R. Hawkins 의 Map of Consciousness를 기반으로 한 Assessment of Level of Consciousness', en: 'Assessment of Level of Consciousness based on Dr. David R. Hawkins\' Map of Consciousness' },
     introTitle: { ko: '시작하기', en: 'Start Assessment' },
-    introSub: { ko: '아래 정보를 입력한 후 검사를 시작하세요. 총 99문항이며 약 20-25분 소요됩니다.', en: 'Please fill in the information below to start. There are 99 questions and it takes approximately 20-25 minutes.' },
-    labelName: { ko: '이름 (내담자)', en: 'Name (Client)' },
+    introSub: { ko: '아래 정보를 입력한 후 검사를 시작하세요. 약 10~15분 정도 소요됩니다.', en: 'Please fill in the information below to start. It takes approximately 10-15 minutes.' },
+    labelName: { ko: '이름', en: 'Name' },
     labelDate: { ko: '검사 날짜', en: 'Assessment Date' },
+    labelGender: { ko: '성별', en: 'Gender' },
+    genderPlaceholder: { ko: '선택해 주세요', en: 'Please select' },
+    genderMale: { ko: '남성', en: 'Male' },
+    genderFemale: { ko: '여성', en: 'Female' },
+    genderUndisclosed: { ko: '명시 안함', en: 'Prefer not to say' },
+    labelPhone: { ko: '핸드폰 번호', en: 'Phone Number' },
+    labelEmail: { ko: '이메일 주소', en: 'Email Address' },
     labelCounselor: { ko: '상담사 이름 (선택)', en: 'Counselor Name (Optional)' },
     noticeTitle: { ko: '📋 검사 안내', en: '📋 Instructions' },
     noticeText: { ko: '각 문항을 읽고 현재 자신의 일반적인 삶의 패턴과 태도에 얼마나 해당하는지 솔직하게 응답해 주세요. 정답은 없으며, 가장 솔직한 답변이 가장 정확한 결과를 제공합니다.', en: 'Read each statement and honestly indicate how much it reflects your general patterns and attitudes in life. There are no right or wrong answers — the most honest response provides the most accurate result.' },
@@ -962,8 +990,15 @@ function updateAllText() {
     document.getElementById('hSub').textContent = t('hSub');
     document.getElementById('introTitle').textContent = t('introTitle');
     document.getElementById('introSub').textContent = t('introSub');
-    document.getElementById('labelName').textContent = t('labelName');
+    document.getElementById('labelName').innerHTML = t('labelName') + ' <span style="color:var(--warn)">*</span>';
     document.getElementById('labelDate').textContent = t('labelDate');
+    document.getElementById('labelGender').innerHTML = t('labelGender') + ' <span style="color:var(--warn)">*</span>';
+    document.getElementById('genderPlaceholder').textContent = t('genderPlaceholder');
+    document.getElementById('genderMale').textContent = t('genderMale');
+    document.getElementById('genderFemale').textContent = t('genderFemale');
+    document.getElementById('genderUndisclosed').textContent = t('genderUndisclosed');
+    document.getElementById('labelPhone').innerHTML = t('labelPhone') + ' <span style="color:var(--warn)">*</span>';
+    document.getElementById('labelEmail').innerHTML = t('labelEmail') + ' <span style="color:var(--warn)">*</span>';
     document.getElementById('labelCounselor').textContent = t('labelCounselor');
     document.getElementById('noticeTitle').textContent = t('noticeTitle');
     document.getElementById('noticeText').textContent = t('noticeText');
@@ -990,7 +1025,31 @@ function showScreen(id) {
 
 // START
 function startAssessment() {
-    state.name = document.getElementById('inputName').value.trim() || (state.lang === 'ko' ? '내담자' : 'Client');
+    const name = document.getElementById('inputName').value.trim();
+    const gender = document.getElementById('inputGender').value;
+    const phone = document.getElementById('inputPhone').value.trim();
+    const email = document.getElementById('inputEmail').value.trim();
+    const L = state.lang;
+    if (!name) {
+        alert(L === 'ko' ? '이름을 입력해 주세요.' : 'Please enter your name.');
+        document.getElementById('inputName').focus(); return;
+    }
+    if (!gender) {
+        alert(L === 'ko' ? '성별을 선택해 주세요.' : 'Please select your gender.');
+        document.getElementById('inputGender').focus(); return;
+    }
+    if (!phone) {
+        alert(L === 'ko' ? '핸드폰 번호를 입력해 주세요.' : 'Please enter your phone number.');
+        document.getElementById('inputPhone').focus(); return;
+    }
+    if (!email) {
+        alert(L === 'ko' ? '이메일 주소를 입력해 주세요.' : 'Please enter your email address.');
+        document.getElementById('inputEmail').focus(); return;
+    }
+    state.name = name;
+    state.gender = gender;
+    state.phone = phone;
+    state.email = email;
     state.date = document.getElementById('inputDate').value || new Date().toISOString().split('T')[0];
     state.counselor = document.getElementById('inputCounselor').value.trim();
     state.page = 0;

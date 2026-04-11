@@ -727,13 +727,7 @@
 
     <!-- RESULTS SCREEN -->
     <div id="screen-results" class="screen hidden">
-        <div class="result-tabs no-print">
-            <button class="tab-btn active" onclick="switchTab('client')" id="tabClient">💚 내담자 결과</button>
-            <button class="tab-btn" onclick="switchTab('clinical')" id="tabClinical">🔬 임상용 보고서</button>
-        </div>
-
         <div id="tab-client" class="tab-content active"></div>
-        <div id="tab-clinical" class="tab-content"></div>
 
         <div class="nav-btns no-print" style="margin-top: 24px;">
             <button class="btn btn-outline" onclick="downloadPDF()" id="btnPrint" style="background: linear-gradient(135deg, #A04870, #C96A8A); color: white; border: none;">📥 PDF로 다운로드</button>
@@ -953,7 +947,6 @@ const T = {
     btnNext: { ko: '다음 →', en: 'Next →' },
     btnSubmit: { ko: '결과 보기 →', en: 'View Results →' },
     tabClient: { ko: '💚 내담자 결과', en: '💚 Client Result' },
-    tabClinical: { ko: '🔬 임상용 보고서', en: '🔬 Clinical Report' },
     btnPrint: { ko: '🖨️ 인쇄 / PDF 저장', en: '🖨️ Print / Save PDF' },
     btnRestart: { ko: '다시 시작', en: 'Restart' },
     likert1: { ko: '전혀\n그렇지 않다', en: 'Not\nat all' },
@@ -1004,7 +997,6 @@ function updateAllText() {
     document.getElementById('noticeText').textContent = t('noticeText');
     document.getElementById('btnStart').textContent = t('btnStart');
     document.getElementById('tabClient').textContent = t('tabClient');
-    document.getElementById('tabClinical').textContent = t('tabClinical');
     if (document.getElementById('screen-questions') && !document.getElementById('screen-questions').classList.contains('hidden')) {
         renderPage();
     }
@@ -1237,146 +1229,335 @@ async function showResults() {
     setTimeout(() => {
         showScreen('results');
         renderClientReport(results.score, results.currentLevel, results.lvScores, results.ranked);
-        renderClinicalReport(results.score, results.currentLevel, results.lvScores, results.ranked);
     }, 2000);
 }
 
-function switchTab(tab) {
-    ['client', 'clinical'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.remove('active');
-        document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`).classList.remove('active');
-    });
-    document.getElementById(`tab-${tab}`).classList.add('active');
-    document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+// CLIENT REPORT
+function renderHawkinsMap(currentLevel, lang) {
+    const L = lang;
+    const mapLevels = [
+        { val: 700, ko: '깨달음', en: 'Enlightenment', emo_ko: '순수 의식', emo_en: 'Pure Consciousness', color: '#B5179E' },
+        { val: 600, ko: '평화', en: 'Peace', emo_ko: '축복', emo_en: 'Bliss', color: '#7B2D8B' },
+        { val: 540, ko: '기쁨', en: 'Joy', emo_ko: '평온', emo_en: 'Serenity', color: '#5C4DB1' },
+        { val: 500, ko: '사랑', en: 'Love', emo_ko: '경외', emo_en: 'Reverence', color: '#3A86FF' },
+        { val: 400, ko: '이성', en: 'Reason', emo_ko: '이해', emo_en: 'Understanding', color: '#2196F3' },
+        { val: 350, ko: '수용', en: 'Acceptance', emo_ko: '용서', emo_en: 'Forgiveness', color: '#00B4D8' },
+        { val: 310, ko: '의지', en: 'Willingness', emo_ko: '낙관', emo_en: 'Optimism', color: '#06D6A0' },
+        { val: 250, ko: '중립', en: 'Neutrality', emo_ko: '신뢰', emo_en: 'Trust', color: '#40BF60' },
+        { val: 200, ko: '용기', en: 'Courage', emo_ko: '긍정', emo_en: 'Affirmation', color: '#80B918', divider: true },
+        { val: 175, ko: '자존심', en: 'Pride', emo_ko: '오만', emo_en: 'Arrogance', color: '#F4A261' },
+        { val: 150, ko: '분노', en: 'Anger', emo_ko: '증오', emo_en: 'Hate', color: '#E76F51' },
+        { val: 125, ko: '욕망', en: 'Desire', emo_ko: '집착', emo_en: 'Craving', color: '#E9C46A' },
+        { val: 100, ko: '두려움', en: 'Fear', emo_ko: '불안', emo_en: 'Anxiety', color: '#F77F00' },
+        { val: 75, ko: '슬픔', en: 'Grief', emo_ko: '후회', emo_en: 'Regret', color: '#9B9B9B' },
+        { val: 50, ko: '무감각', en: 'Apathy', emo_ko: '절망', emo_en: 'Despair', color: '#777' },
+        { val: 30, ko: '죄책감', en: 'Guilt', emo_ko: '비난', emo_en: 'Blame', color: '#555' },
+        { val: 20, ko: '수치심', en: 'Shame', emo_ko: '굴욕', emo_en: 'Humiliation', color: '#333' },
+    ];
+
+    const rows = mapLevels.map(lv => {
+        const isCurrent = lv.val === currentLevel.val;
+        const bg = isCurrent ? 'background:#FFF0F5;font-weight:700;' : '';
+        const indicator = isCurrent ? `<span style="color:var(--primary);font-weight:800;margin-left:6px;">◀ ${L === 'ko' ? '현재' : 'NOW'}</span>` : '';
+        const dividerStyle = lv.divider ? 'border-bottom: 2.5px dashed #C96A8A;' : '';
+        const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${lv.color};margin-right:6px;vertical-align:middle;"></span>`;
+        return `<tr style="${bg}${dividerStyle}">
+            <td style="padding:7px 10px;font-size:0.88rem;white-space:nowrap;">${dot}${L === 'ko' ? lv.ko : lv.en}${indicator}</td>
+            <td style="padding:7px 10px;font-size:0.88rem;text-align:center;font-weight:600;color:var(--primary-dark);">${lv.val}</td>
+            <td style="padding:7px 10px;font-size:0.82rem;color:var(--muted);">${L === 'ko' ? lv.emo_ko : lv.emo_en}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+        <div style="margin:20px 0;">
+            <div style="font-weight:700;font-size:1rem;color:var(--primary-dark);margin-bottom:10px;">
+                🗺 ${L === 'ko' ? 'Hawkins 의식 지도 (Map of Consciousness)' : 'Hawkins Map of Consciousness'}
+            </div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;">
+                ${L === 'ko' ? '점선 위는 삶에 긍정적 에너지를 더하는 단계, 점선 아래는 성장의 기회 단계입니다.' : 'Above the dotted line: levels that add positive energy to life. Below: levels of growth opportunity.'}
+            </div>
+            <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);">
+                <table style="width:100%;border-collapse:collapse;background:#fff;">
+                    <thead>
+                        <tr style="background:var(--bg);">
+                            <th style="padding:8px 10px;font-size:0.8rem;color:var(--muted);text-align:left;font-weight:600;">${L === 'ko' ? '의식 단계' : 'Level'}</th>
+                            <th style="padding:8px 10px;font-size:0.8rem;color:var(--muted);text-align:center;font-weight:600;">${L === 'ko' ? '수치' : 'Score'}</th>
+                            <th style="padding:8px 10px;font-size:0.8rem;color:var(--muted);text-align:left;font-weight:600;">${L === 'ko' ? '핵심 감정' : 'Core Emotion'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        </div>`;
 }
 
-// CLIENT REPORT
 function renderClientReport(score, currentLevel, lvScores, ranked) {
     const L = state.lang;
     const isCritical = currentLevel.val >= 200;
-    
+    const top3 = ranked.slice(0, 3);
+    const bottom3 = [...ranked].reverse().slice(0, 3);
+
     let html = `
         <div class="card" style="border-top: 4px solid var(--gold)">
             <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">
                 ${state.name} · ${state.date}${state.counselor ? ' · ' + (L === 'ko' ? '상담사: ' : 'Counselor: ') + state.counselor : ''}
             </div>
-            
+
             <div class="score-hero">
-                <div style="font-size: 0.9rem; opacity: .85; margin-bottom: 10px;">${L === 'ko' ? '현재 의식 수준' : 'Current Consciousness Level'}</div>
+                <div style="font-size: 0.9rem; opacity: .85; margin-bottom: 10px;">${L === 'ko' ? '현재 의식 단계' : 'Current Level of Consciousness'}</div>
                 <div class="score-num">${score}</div>
                 <div class="score-level">${lvName(currentLevel)} (${currentLevel.val})</div>
                 <div class="score-desc">${tl(currentLevel, 'emo')}</div>
             </div>
-            
+
+            ${renderHawkinsMap(currentLevel, L)}
+
             <div class="client-card">
                 <div class="client-level-name">${lvName(currentLevel)}</div>
-                <div class="client-score">Level ${currentLevel.val} · ${tl(currentLevel, 'emo')}</div>
+                <div class="client-score" style="margin-bottom:14px;">Level ${currentLevel.val} · ${tl(currentLevel, 'emo')}</div>
                 <div class="client-interpretation">
                     ${getClientInterpretation(currentLevel.id, L)}
                 </div>
             </div>
-            
+
             ${isCritical
-                ? `<div class="insight-box success"><div class="insight-title">✨ ${L === 'ko' ? '임계점(200) 이상' : 'Above Critical Point (200)'}</div>${L === 'ko' ? '당신의 의식 수준은 호킨스가 제시한 임계점(200, 용기)을 넘어섰습니다. 삶에 긍정적인 힘이 작동하고 있습니다.' : 'Your consciousness level has surpassed the critical point (200, Courage) proposed by Hawkins. Positive life force is at work.'}</div>`
-                : `<div class="insight-box warn"><div class="insight-title">💛 ${L === 'ko' ? '성장의 기회' : 'Opportunity for Growth'}</div>${L === 'ko' ? '현재 의식 수준은 임계점(200, 용기) 이전 단계에 있습니다. 이것은 당신이 더 큰 성장을 향해 나아갈 수 있다는 뜻입니다.' : 'Your current consciousness level is below the critical point (200, Courage). This means you have the potential to grow toward greater awareness.'}</div>`
+                ? `<div class="insight-box success"><div class="insight-title">✨ ${L === 'ko' ? '임계점(200) 이상' : 'Above Critical Point (200)'}</div>${L === 'ko' ? '당신의 의식 수준은 Hawkins가 제시한 임계점(200, 용기)을 넘어섰습니다. 이 단계부터 의식은 삶에 긍정적인 에너지를 더하기 시작합니다.' : 'Your consciousness level has surpassed the critical point (200, Courage) proposed by Hawkins. From this level, consciousness begins to add positive energy to life.'}</div>`
+                : `<div class="insight-box warn"><div class="insight-title">💛 ${L === 'ko' ? '성장의 기회' : 'Opportunity for Growth'}</div>${L === 'ko' ? '현재 의식 단계는 임계점(200, 용기) 이전에 있습니다. 이것은 부족함이 아니라, 더 큰 성장을 향해 나아갈 수 있는 소중한 기회입니다.' : 'Your current level is below the critical point (200, Courage). This is not a deficiency — it is a precious opportunity to grow toward greater awareness.'}</div>`
             }
-            
+
+            <div style="display:flex;gap:14px;flex-wrap:wrap;margin:20px 0;">
+                <div style="flex:1;min-width:220px;background:linear-gradient(135deg,#F0FFF6,#DDFAEC);border:1px solid #BDECD0;border-radius:12px;padding:16px;">
+                    <div style="font-weight:700;font-size:0.9rem;color:#2E7D52;margin-bottom:10px;">✅ ${L === 'ko' ? '강점 레벨 TOP 3' : 'Strength Levels TOP 3'}</div>
+                    ${top3.map((lv, i) => `
+                        <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.1rem;">${['🥇','🥈','🥉'][i]}</span>
+                            <div>
+                                <div style="font-weight:700;font-size:0.88rem;color:#1a5c38;">${L === 'ko' ? lv.ko : lv.en} (${lv.val})</div>
+                                <div style="font-size:0.78rem;color:#2E7D52;">${L === 'ko' ? lv.emo_ko : lv.emo_en}</div>
+                            </div>
+                        </div>`).join('')}
+                </div>
+                <div style="flex:1;min-width:220px;background:linear-gradient(135deg,#FFF5F0,#FFE8DC);border:1px solid #F5C9B3;border-radius:12px;padding:16px;">
+                    <div style="font-weight:700;font-size:0.9rem;color:#B85C2A;margin-bottom:10px;">🌱 ${L === 'ko' ? '도전 레벨 TOP 3' : 'Challenge Levels TOP 3'}</div>
+                    ${bottom3.map((lv, i) => `
+                        <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.1rem;">${['1️⃣','2️⃣','3️⃣'][i]}</span>
+                            <div>
+                                <div style="font-weight:700;font-size:0.88rem;color:#8B3A1A;">${L === 'ko' ? lv.ko : lv.en} (${lv.val})</div>
+                                <div style="font-size:0.78rem;color:#B85C2A;">${L === 'ko' ? lv.emo_ko : lv.emo_en}</div>
+                            </div>
+                        </div>`).join('')}
+                </div>
+            </div>
+
             <div class="next-level">
-                <h4>${L === 'ko' ? '🌱 성장의 다음 단계' : '🌱 Next Step of Growth'}</h4>
+                <h4>${L === 'ko' ? '🌱 성장을 위한 다음 걸음' : '🌱 Next Steps for Growth'}</h4>
                 <p>${getGrowthTip(currentLevel.id, L)}</p>
             </div>
         </div>
     `;
-    
-    document.getElementById('tab-client').innerHTML = html;
-}
 
-// CLINICAL REPORT
-function renderClinicalReport(score, currentLevel, lvScores, ranked) {
-    const L = state.lang;
-    const top3 = ranked.slice(0, 3);
-    
-    let html = `
-        <div class="card" style="border-top: 4px solid var(--primary)">
-            <div style="font-weight: 700; font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 16px;">
-                🔬 ${L === 'ko' ? '임상용 의식 수준 보고서' : 'Clinical Consciousness Assessment Report'}
-            </div>
-            
-            <div class="score-hero">
-                <div style="font-size: 0.9rem; opacity: .85; margin-bottom: 10px;">${L === 'ko' ? '의식 수준 점수' : 'Consciousness Level Score'}</div>
-                <div class="score-num">${score}</div>
-                <div class="score-level">${lvName(currentLevel)} · ${currentLevel.val}</div>
-                <div class="score-desc">${L === 'ko' ? '세계관: ' : 'Worldview: '}${tl(currentLevel, 'view')}</div>
-            </div>
-            
-            <div style="background: #F0FFF6; border: 1px solid #BDECD0; border-radius: 12px; padding: 16px; margin-bottom: 20px;">
-                <div style="font-weight: 700; font-size: 0.9rem; color: #2E7D52; margin-bottom: 10px;">✅ ${L === 'ko' ? '강점 레벨 TOP 3' : 'Strength Levels TOP 3'}</div>
-                ${top3.map((lv, i) => `
-                    <div style="margin-bottom: 8px;">
-                        <span style="display: inline-block; background: #DDFAEC; color: #2E7D52; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
-                            ${['🥇', '🥈', '🥉'][i]} ${lvName(lv)} (${lv.val})
-                        </span>
-                    </div>
-                `).join('')}
-            </div>
-            
-            <div class="insight-box success" style="margin-bottom: 20px;">
-                <div class="insight-title">${L === 'ko' ? '상담 개입 포인트' : 'Counseling Intervention Points'}</div>
-                <p style="font-size: 0.88rem; margin-top: 8px; line-height: 1.7;">
-                    ${getInterventionStrategy(currentLevel.id, L)}
-                </p>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('tab-clinical').innerHTML = html;
+    document.getElementById('tab-client').innerHTML = html;
 }
 
 // HELPERS
 function getClientInterpretation(levelId, lang) {
     const interpretations = {
-        shame: { ko: '지금 이 순간, 당신 안에는 깊은 자기 인식이 존재합니다. 수치심을 느끼는 것은 당신이 더 나은 자신을 갈망한다는 증거이기도 합니다. 이 자리에서 자기 자신을 향한 따뜻한 눈길을 시작할 수 있습니다.', en: 'At this moment, deep self-awareness exists within you. Feeling shame can also be evidence of your longing for a better self. From this place, you can begin turning a gentle gaze toward yourself.' },
-        guilt: { ko: '책임감을 느끼는 당신은 도덕적 감수성이 있는 사람입니다. 이제 그 책임감을 자기 처벌이 아닌 성장의 자원으로 전환하는 여정을 시작할 수 있습니다.', en: 'You are someone with moral sensitivity — feeling responsibility shows you care. Now you can begin transforming that sense of responsibility from self-punishment into a resource for growth.' },
-        apathy: { ko: '지금의 무기력함은 쉬어야 할 필요를 알리는 신호일 수 있습니다. 작은 한 걸음부터 시작해도 괜찮습니다. 당신 안에 아직 꺼지지 않은 불씨가 있습니다.', en: 'Your current helplessness may be a signal that you need rest. It is okay to start with just a small step. There is still an ember within you that has not gone out.' },
-        grief: { ko: '슬픔은 당신이 무언가를 깊이 사랑했다는 증거입니다. 이 감정을 충분히 느끼고 표현하는 것이 치유의 시작입니다. 당신의 슬픔은 유효하고 중요합니다.', en: 'Grief is evidence that you have loved something deeply. Fully feeling and expressing this emotion is the beginning of healing. Your sadness is valid and important.' },
-        fear: { ko: '조심스럽고 신중한 당신은 지혜로운 사람입니다. 두려움 너머에는 새로운 가능성이 기다리고 있으며, 작은 용기의 행동들이 큰 변화를 만들어냅니다.', en: 'You are a thoughtful and careful person. Beyond fear, new possibilities await, and small acts of courage create great change.' },
-        desire: { ko: '강한 열망은 삶의 원동력이 됩니다. 지금 원하는 것들이 진정으로 당신을 행복하게 해줄지 탐구해보는 것이 성장의 기회입니다.', en: 'Strong desire is the driving force of life. Exploring whether what you currently want will truly make you happy is an opportunity for growth.' },
-        anger: { ko: '당신 안의 분노는 경계와 정의에 대한 감각에서 나옵니다. 이 에너지를 건설적인 방향으로 전환할 때, 강력한 변화의 힘이 됩니다.', en: 'The anger within you comes from your sense of boundaries and justice. When this energy is channeled constructively, it becomes a powerful force for change.' },
-        pride: { ko: '자신감과 자부심은 소중한 자산입니다. 이제 그 힘을 겸손함과 결합할 때, 당신의 영향력은 더욱 깊어지고 넓어질 것입니다.', en: 'Confidence and pride are valuable assets. When you combine that strength with humility, your influence will deepen and broaden.' },
-        courage: { ko: '용기의 문턱에 선 당신은 임계점을 넘어선 의식 수준에 있습니다. 이 내면의 힘을 신뢰하고 계속 나아가세요. 삶은 당신을 지지합니다.', en: 'Standing at the threshold of courage, you are at a consciousness level that has crossed the critical point. Trust this inner strength and keep moving forward. Life supports you.' },
-        neutral: { ko: '유연하고 균형 잡힌 당신은 삶의 다양한 상황을 잘 헤쳐나갑니다. 이 평온함을 기반으로 더 깊은 성장의 여정을 시작할 준비가 되어 있습니다.', en: 'Flexible and balanced, you navigate life\'s varied situations well. Based on this calm, you are ready to begin a journey of deeper growth.' },
-        willing: { ko: '성장을 향한 열린 마음과 의지가 빛납니다. 당신은 더 나은 삶을 향한 여정에서 이미 좋은 속도로 나아가고 있습니다.', en: 'Your open heart and willingness to grow shines brightly. You are already progressing at a good pace on your journey toward a better life.' },
-        accept: { ko: '수용의 힘은 진정한 자유를 가져다줍니다. 있는 그대로를 받아들이는 당신의 능력은 삶을 더욱 풍요롭게 만들어갑니다.', en: 'The power of acceptance brings true freedom. Your ability to receive things as they are enriches your life more and more.' },
-        reason: { ko: '명철한 이해력과 논리적 사고는 귀한 선물입니다. 이제 그 이성의 힘을 가슴의 지혜와 연결할 때, 더 온전한 앎이 열립니다.', en: 'Clear understanding and logical thinking are precious gifts. When you connect that power of reason with the wisdom of the heart, a more complete knowing opens.' },
-        love: { ko: '사랑의 의식 수준에서 삶은 아름답고 풍요롭습니다. 당신이 나누는 사랑이 세상을 치유하고 있습니다. 이 축복을 계속 나누어 주세요.', en: 'At the consciousness level of love, life is beautiful and abundant. The love you share is healing the world. Please continue to share this blessing.' },
-        joy: { ko: '당신 안의 기쁨은 그 자체로 세상에 빛을 더합니다. 이 내면의 충만함은 타인에게도 자연스럽게 흘러갑니다. 당신은 살아있는 선물입니다.', en: 'The joy within you adds light to the world by its very existence. This inner fullness naturally flows to others as well. You are a living gift.' },
-        peace: { ko: '깊은 평화 속에 거하는 당신은 주변에 조용한 축복의 영향력을 미칩니다. 이 고요한 광명이 계속 빛나기를 바랍니다.', en: 'Dwelling in deep peace, you exert a quiet blessing influence on those around you. May this silent luminosity continue to shine.' },
-        enlight: { ko: '순수 의식의 경험이 있는 당신의 삶은 그 자체로 인류에게 귀한 선물입니다. 이 깊은 앎이 세상에 계속 흘러가기를 바랍니다.', en: 'Your life, with its experience of pure consciousness, is itself a precious gift to humanity. May this deep knowing continue to flow into the world.' },
+        shame: {
+            ko: `<p><strong>수치심(Shame, 20)</strong> 단계는 Hawkins의 의식 지도에서 가장 낮은 단계로, 자기 자신의 존재 자체가 결함이 있거나 가치 없다는 깊은 믿음이 내면에 자리하고 있는 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 굴욕과 자기혐오:</strong> 이 감정은 단순한 부끄러움이 아니라 '나는 근본적으로 잘못된 존재'라는 인식에서 비롯됩니다. 사람들의 시선을 피하거나, 칭찬을 받아도 믿지 못하거나, 자신을 지나치게 작게 만드는 방식으로 일상에 나타납니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 관계에서 자신을 드러내지 않으려 하고, 실수에 극도로 예민하며, 타인의 승인에 지나치게 의존하는 경향이 있습니다. 때로는 스스로를 고립시키거나 존재를 숨기고 싶은 충동을 느낍니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 단계를 인식했다는 것 자체가 이미 변화의 시작입니다. 자기 자신에게 가장 친한 친구에게 하듯 따뜻하게 말하는 자기 연민(self-compassion) 연습이 핵심입니다. '나는 완벽하지 않아도 사랑받을 자격이 있다'는 새로운 내면의 이야기를 조금씩 심어가는 것—작은 성공 경험을 쌓고, 안전한 관계 안에서 자신을 표현하는 연습이 이 단계를 넘어서는 문을 열어줍니다.</p>`,
+            en: `<p><strong>Shame (20)</strong> is the lowest level on Hawkins' Map of Consciousness — a state where a deep belief that one's very existence is flawed or worthless resides within.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Humiliation and self-hatred:</strong> This is not mere embarrassment but arises from the perception that "I am fundamentally wrong." It manifests as avoiding others' eyes, being unable to accept compliments, or making oneself appear small.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Avoiding self-disclosure in relationships, extreme sensitivity to mistakes, and heavy dependence on others' approval. There may be impulses to isolate or hide one's existence.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Recognizing this level is already the beginning of change. The key is practicing self-compassion — speaking to yourself as you would to your closest friend. Gradually planting the new inner narrative, "I deserve love even without being perfect," through small success experiences and practicing self-expression in safe relationships.</p>`
+        },
+        guilt: {
+            ko: `<p><strong>죄책감(Guilt, 30)</strong> 단계는 '내가 잘못했다', '내가 더 잘했어야 했다'는 내면의 목소리가 지속적으로 울리며 스스로를 비난하는 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 비난과 파괴성:</strong> 이 비난은 주로 자신을 향해 작동합니다. 타인의 고통에 자신이 책임이 있다고 느끼거나, 과거의 실수를 반복해서 되새기며 자신을 처벌하거나, 용서받아도 스스로는 용서하지 못하는 방식으로 나타납니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 사과를 반복하거나, 타인의 기대를 충족시키기 위해 지나치게 애쓰거나, 자신의 필요보다 타인의 필요를 항상 우선시하는 경향이 있습니다. 때로는 처벌받아 마땅하다는 생각에 스스로를 힘들게 하기도 합니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 도덕적 감수성과 책임감이 강한 당신은 이미 공동체를 소중히 여기는 중요한 강점을 지니고 있습니다. 성장의 핵심은 '잘못에서 배우는 것'과 '자기 처벌'을 분리하는 것입니다. "나는 실수를 했지만, 그것이 내 전부가 아니다. 나는 앞으로 더 잘할 수 있다"는 자기 용서의 관점을 매일 연습하세요. 잘못에서 배운 것을 미래의 선한 행동으로 전환하는 데 에너지를 쏟는 것이 이 단계를 넘어서는 길입니다.</p>`,
+            en: `<p><strong>Guilt (30)</strong> is a state where an inner voice persistently repeats "I did wrong" or "I should have done better," leading to ongoing self-blame.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Blame and destructiveness:</strong> This blame primarily operates toward oneself. It appears as feeling responsible for others' suffering, repeatedly replaying past mistakes, or being unable to forgive yourself even when others have forgiven you.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Repeatedly apologizing, exhausting yourself meeting others' expectations, or always prioritizing others' needs over your own. Sometimes punishing yourself with the thought that you deserve to suffer.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Your strong moral sensitivity and sense of responsibility are already important strengths showing you care about community. The key to growth is separating "learning from mistakes" from "self-punishment." Practice daily the perspective of self-forgiveness: "I made a mistake, but that is not all of who I am. I can do better going forward." Channel energy into transforming what you learned from mistakes into future good actions.</p>`
+        },
+        apathy: {
+            ko: `<p><strong>무감각(Apathy, 50)</strong> 단계는 에너지와 의지가 고갈된 상태로, 모든 것이 무의미하고 변화가 불가능하다는 깊은 절망감이 특징입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 절망과 체념:</strong> 아침에 일어나는 것 자체가 힘들거나, 미래에 대한 기대가 없거나, 타인의 도움도 별 의미가 없게 느껴집니다. '해봤자 소용없다'는 생각이 지배적이며, 삶 자체가 무거운 짐처럼 느껴질 수 있습니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 사람들을 피하거나, 좋아했던 활동에 흥미를 잃거나, 작은 일도 시작하기가 어렵습니다. 돌봄을 받아도 실감하지 못하며, 모든 것이 의미 없게 느껴지는 정서적 마비 상태가 지속될 수 있습니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 단계에서 가장 중요한 것은 자신을 다그치지 않는 것입니다. 먼저 충분한 휴식과 안전한 공간을 허용하세요. 이것은 나약함이 아니라 재충전의 과정입니다. 거창한 목표가 아닌 하루 한 가지 아주 작은 행동—창문 열기, 물 한 잔 마시기, 5분 산책—을 시도해보세요. 그 작은 불씨들이 쌓여 다시 살아가는 힘이 됩니다. 전문적인 상담 지원도 적극적으로 활용하기를 권합니다.</p>`,
+            en: `<p><strong>Apathy (50)</strong> is a state of depleted energy and will, characterized by a deep sense of despair that everything is meaningless and change is impossible.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Despair and resignation:</strong> Getting out of bed feels difficult, there is no expectation for the future, and even others' help feels pointless. The thought "it won't make a difference anyway" dominates, and life itself can feel like an unbearable burden.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Avoiding people, losing interest in once-loved activities, difficulty starting even small tasks. Even when cared for, it doesn't register, and a state of emotional numbness where everything feels meaningless can persist.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> The most important thing at this level is not to push yourself. First, allow yourself sufficient rest and a safe space — this is not weakness but a process of recharging. Try one very small action each day — opening a window, drinking a glass of water, a 5-minute walk. These small sparks accumulate into renewed life force. Actively seeking professional counseling support is also highly encouraged.</p>`
+        },
+        grief: {
+            ko: `<p><strong>슬픔(Grief, 75)</strong> 단계는 잃어버린 것—소중한 관계, 기회, 건강, 사람—에 대한 깊은 애도와 후회의 감정이 주를 이루는 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 후회와 상실감:</strong> '그때 다르게 했더라면', '돌아오지 않는 것들'에 대한 생각이 반복되며 삶 전체가 비극적으로 느껴질 수 있습니다. 기쁜 순간에도 '이것도 곧 사라지겠지'라는 쓸쓸함이 밀려올 수 있습니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 과거를 자주 돌아보며 현재에 집중하기 어렵고, 새로운 것을 시작하는 것이 두렵거나 의미 없게 느껴집니다. 혼자 있는 시간이 많아지거나, 과거의 사진이나 추억에 자주 머무는 경향이 있습니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 슬픔을 느낀다는 것은 당신이 무언가를 깊이 사랑했다는 아름다운 증거입니다. 이 감정을 억누르지 말고 안전한 공간에서 충분히 표현하는 것이 치유의 시작입니다. 일기 쓰기, 신뢰할 수 있는 사람과의 나눔, 상담을 통해 슬픔을 흘려보내세요. 잃은 것의 의미와 그것이 당신에게 가르쳐 준 것을 발견하는 것이 슬픔에서 앞으로 나아가는 다리가 됩니다.</p>`,
+            en: `<p><strong>Grief (75)</strong> is a state dominated by deep mourning and regret over what has been lost — precious relationships, opportunities, health, or people.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Regret and loss:</strong> Thoughts like "if only I had done things differently" or "things that can never return" repeat, making life feel entirely tragic. Even in happy moments, a loneliness of "this too will soon disappear" can wash over you.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Frequently looking back at the past makes it difficult to focus on the present. Starting new things feels frightening or pointless. There may be a tendency to spend more time alone or to linger in old photos and memories.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Feeling grief is a beautiful testament to how deeply you loved something. Not suppressing this emotion but expressing it fully in a safe space is the beginning of healing. Through journaling, sharing with someone you trust, or counseling, allow the grief to flow through you. Discovering the meaning of what was lost and what it taught you becomes the bridge from grief to moving forward.</p>`
+        },
+        fear: {
+            ko: `<p><strong>두려움(Fear, 100)</strong> 단계는 세상이 위험하고 위협적으로 느껴지며, 무엇인가 나쁜 일이 일어날 것 같다는 지속적인 불안감이 삶을 이끄는 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 불안과 회피:</strong> 새로운 시도를 주저하거나, 사람들의 판단을 두려워하거나, 통제할 수 없는 상황에서 극도의 긴장을 경험합니다. '혹시 잘못되면 어떡하지'라는 생각이 결정을 어렵게 만들고, 익숙한 것에만 머물려는 경향이 강합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 어떤 일을 시작하기 전에 모든 가능한 위험을 먼저 생각하고, 실패 가능성이 조금이라도 있으면 회피하는 경향이 있습니다. 관계에서는 거절을 두려워하거나 사람들을 실망시키지 않으려고 자신의 의견을 억누를 수 있습니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 신중함과 조심성은 당신이 배려심 깊고 사려 깊은 사람임을 보여주는 강점이기도 합니다. 성장의 핵심은 '두려움이 사라지면 행동하리라'가 아니라 '두려움을 안고 한 걸음 내딛는다'는 자세입니다. 안전한 환경에서 작은 도전을 하나씩 시도하며 '해봤더니 할 수 있었다'는 경험을 쌓아가는 것이 두려움을 넘어서는 가장 확실한 방법입니다.</p>`,
+            en: `<p><strong>Fear (100)</strong> is a state where the world feels dangerous and threatening, and a persistent anxiety that something bad will happen guides life.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Anxiety and avoidance:</strong> Hesitating before new attempts, fearing others' judgment, or experiencing extreme tension in uncontrollable situations. The thought "what if something goes wrong?" makes decisions difficult, and there is a strong tendency to stay only in familiar territory.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Thinking through all possible risks before starting anything, and avoiding situations where there is even a small chance of failure. In relationships, suppressing your own opinions to avoid disappointing others or fearing rejection.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Your caution and carefulness are actually strengths showing you are a thoughtful and considerate person. The key to growth is not "I will act once the fear disappears" but "I take one step forward while carrying the fear." Building experiences of "I tried it and I could do it" through small challenges in safe environments is the most reliable way to move beyond fear.</p>`
+        },
+        desire: {
+            ko: `<p><strong>욕망(Desire, 125)</strong> 단계는 더 많은 것—성공, 인정, 물질, 사랑—을 얻어야만 행복할 수 있다는 강한 믿음이 삶을 이끄는 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 집착과 갈망:</strong> 원하는 것을 얻으면 잠깐 만족하지만 곧 또 다른 욕구가 생기는 사이클로 나타납니다. 갈망하는 것을 얻지 못할 때 강한 좌절감과 공허함을 느끼며, 그것을 얻기 위해 많은 에너지를 쏟습니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 목표를 향한 강한 추진력과 열망이 있어 많은 것을 성취하지만, 성취 후에도 '아직 부족하다'는 느낌이 사라지지 않습니다. 더 많은 것, 더 좋은 것을 위해 쉬지 않고 달리는 삶의 패턴이 나타납니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 강한 열망과 추진력은 이 단계의 큰 강점입니다. 성장의 핵심은 외부에서 내면으로 시선을 돌리는 것입니다. '나는 지금 이 순간 이미 충분하다'는 내면의 충만함을 탐구하는 것—명상, 감사 일기, 현재 순간에 집중하는 연습—이 외부 집착에서 내면의 평화로 중심을 옮기는 데 도움이 됩니다. 욕망 자체가 나쁜 것이 아니라, 욕망에 의존하지 않는 내면의 안정감을 키우는 것이 다음 단계로 나아가는 열쇠입니다.</p>`,
+            en: `<p><strong>Desire (125)</strong> is a state where the strong belief that happiness only comes from getting more — success, recognition, material things, love — guides life.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Craving and addiction:</strong> Getting what you want brings brief satisfaction, but soon another desire arises in a recurring cycle. Strong frustration and emptiness arise when unable to obtain what is craved, and enormous energy is poured into obtaining it.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Strong drive and ambition toward goals lead to many achievements, but even after achievement the feeling of "still not enough" persists. A life pattern of running ceaselessly for more, for better.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Strong desire and drive are great strengths of this level. The key to growth is turning the gaze from the external to the internal. Exploring inner fullness — "I am already enough in this moment" — through meditation, gratitude journaling, and practicing presence helps shift the center from external attachment to inner peace. Desire itself is not bad; cultivating inner stability that does not depend on desire is the key to moving to the next level.</p>`
+        },
+        anger: {
+            ko: `<p><strong>분노(Anger, 150)</strong> 단계는 세상이 불공평하고 자신이 부당하게 대우받고 있다는 강한 인식에서 비롯된 강렬한 에너지를 지닌 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 증오와 공격성:</strong> 경계를 침범당했을 때 강하게 반응하거나, 불의에 강렬히 저항하거나, 욕구가 좌절될 때 폭발적인 반응이 나타날 수 있습니다. 이 분노는 때로는 관계에서 갈등과 상처로 이어지기도 합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 자신의 권리를 강하게 주장하고, 불공평한 상황에 적극적으로 저항하며, 빠르게 판단하고 반응하는 경향이 있습니다. 이 에너지는 때로는 상대를 압도하거나 관계를 긴장시키기도 합니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 분노는 의식 지도에서 에너지가 가장 강한 단계 중 하나입니다. 무기력함에서 이미 상당히 올라온 상태이며, 자신의 권리와 존엄을 아는 사람입니다. 이 강력한 에너지를 창의적 행동, 건강한 경계 설정, 또는 사회적 변화를 위한 동력으로 전환하는 것이 핵심입니다. 분노가 올라올 때 즉각 반응하는 대신 잠시 멈추고 '이 분노가 내게 무엇을 알려주고 있는가'를 탐구하는 습관이 용기(200)와 그 너머로 나아가는 다리가 됩니다.</p>`,
+            en: `<p><strong>Anger (150)</strong> is a state of intense energy arising from the strong perception that the world is unfair and one is being treated unjustly.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Hate and aggression:</strong> Reacting strongly when boundaries are violated, intensely resisting injustice, or explosive responses when desires are frustrated. This anger can sometimes lead to conflict and hurt in relationships.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Strongly asserting one's rights, actively resisting unfair situations, and a tendency to judge and react quickly. This energy can sometimes overwhelm others or create tension in relationships.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Anger is one of the levels with the most intense energy on the consciousness map. You have already risen considerably from helplessness and are someone who knows your rights and dignity. The key is channeling this powerful energy into creative action, healthy boundary-setting, or as a driving force for social change. Rather than reacting immediately when anger arises, cultivating the habit of pausing to explore "what is this anger telling me?" becomes the bridge to Courage (200) and beyond.</p>`
+        },
+        pride: {
+            ko: `<p><strong>자존심(Pride, 175)</strong> 단계는 강한 자아 의식과 자신의 신념·집단에 대한 강한 동일시가 특징인 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 오만과 방어성:</strong> 자신의 관점이 옳다는 강한 확신, 비판에 대한 즉각적인 저항, 자신과 다른 사람을 '내 편'과 '그들'로 나누는 경향이 나타납니다. 인정받을 때 활기를 느끼고, 무시당한다고 느낄 때 강하게 반응합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 자신의 성취와 지위를 중요시하고, 자신의 집단(가족, 국가, 종교, 직업)에 강한 소속감과 자부심을 느낍니다. 다른 관점을 수용하기보다 자신의 입장을 방어하는 데 에너지를 씁니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 자신감과 뚜렷한 정체성은 이 단계의 귀한 강점입니다. 그러나 자존심은 동시에 성장을 막는 가장 큰 장벽이 될 수 있습니다. '내가 틀릴 수도 있다'는 열린 자세와 타인의 관점을 진정으로 경청하는 능력을 키우는 것이 중요합니다. 겸손함은 자신을 낮추는 것이 아니라 더 크고 풍요로운 관점으로 세상을 보는 것임을 기억하세요. 방어를 내려놓고 진실을 마주하는 용기가 용기(200)의 문을 여는 열쇠입니다.</p>`,
+            en: `<p><strong>Pride (175)</strong> is a state characterized by strong ego-consciousness and intense identification with one's beliefs and group.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Arrogance and defensiveness:</strong> A strong conviction that one's own view is correct, immediate resistance to criticism, and a tendency to divide people into "my side" and "them." Feeling energized when recognized and strongly reactive when feeling ignored.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Placing great importance on one's achievements and status, feeling strong belonging and pride in one's group (family, nation, religion, profession). Spending energy defending one's position rather than accepting different perspectives.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Confidence and a clear sense of identity are precious strengths of this level. However, pride can simultaneously be the greatest barrier to growth. Cultivating an open posture of "I could be wrong" and genuinely listening to others' perspectives is crucial. Remember that humility is not lowering yourself but seeing the world from a larger, richer perspective. The courage to put down defensiveness and face truth is the key that opens the door to Courage (200).</p>`
+        },
+        courage: {
+            ko: `<p><strong>용기(Courage, 200)</strong> 단계는 Hawkins의 의식 지도에서 매우 중요한 전환점입니다. 이 단계부터 의식이 삶에 긍정적인 에너지를 더하기 시작합니다. 당신은 임계점을 넘어선 의식 수준에 있습니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 긍정과 임파워먼트(힘을 줌):</strong> 어려움을 도전으로 바라보고, 실패를 배움의 기회로 받아들이며, 자신과 타인의 가능성을 믿는 마음이 삶에 활력을 더합니다. '할 수 있다'는 내면의 확신이 행동으로 이어집니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식 — 임파워먼트의 발현:</strong> 새로운 시도를 두려움 없이 시작하거나, 도움이 필요한 사람에게 적극적으로 손을 내밀거나, 어려운 상황에서도 '해볼 수 있다'는 의지를 갖습니다. 당신이 있는 곳에 힘과 가능성의 에너지가 자연스럽게 흐릅니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이미 가진 내면의 힘을 더 넓은 삶의 영역—관계, 직업, 공동체—에 적용하는 것이 중요합니다. 두려움을 이기는 것이 아니라 두려움과 함께 행동하는 것이 이 단계의 지혜이며, 이 용기가 더 깊어질수록 중립(250)과 의지(310)의 단계로 자연스럽게 나아가게 됩니다. 삶은 당신을 지지하고 있습니다.</p>`,
+            en: `<p><strong>Courage (200)</strong> is a critical turning point on Hawkins' Map of Consciousness. From this level, consciousness begins to add positive energy to life. You are at a consciousness level that has crossed the critical threshold.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Affirmation and Empowerment:</strong> Viewing difficulties as challenges, accepting failure as a learning opportunity, and believing in your own and others' potential adds vitality to life. An inner conviction of "I can do this" translates into action.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern — Manifestation of empowerment:</strong> Starting new things without fear, actively reaching out to those who need help, and maintaining the will of "let's try" even in difficult situations. Energy of strength and possibility naturally flows wherever you are.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Applying the inner strength you already possess to broader areas of life — relationships, work, community — is important. The wisdom of this level is not conquering fear but acting alongside it. As this courage deepens, you will naturally progress toward Neutrality (250) and Willingness (310). Life is supporting you.</p>`
+        },
+        neutral: {
+            ko: `<p><strong>중립(Neutrality, 250)</strong> 단계는 삶의 변화와 불확실성에 흔들리지 않는 내면의 안정감과 유연함이 특징입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 신뢰와 유연함:</strong> '지금 이 상황도 괜찮다'는 기본적인 안도감, 결과에 집착하지 않는 여유, 다양한 관점을 자연스럽게 수용하는 열린 마음이 이 단계의 아름다운 특징입니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 갈등 상황에서 균형 잡힌 중재자 역할을 하거나, 스트레스 상황에서도 평정심을 유지하는 모습을 보여줍니다. '이것도 저것도 다 괜찮다'는 여유로운 태도가 주변 사람들에게도 안정감을 줍니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 안정감을 기반으로 더 깊은 삶의 의미와 가치를 탐구하는 방향으로 나아가는 것이 좋습니다. 유연함에서 더 나아가 삶이 나를 좋은 방향으로 이끈다는 깊은 신뢰와 의지—성장을 향한 자발적 열망—를 개발하는 것이 의지(310) 단계로 향하는 다리입니다.</p>`,
+            en: `<p><strong>Neutrality (250)</strong> is characterized by inner stability and flexibility that is not shaken by life's changes and uncertainties.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Trust and flexibility:</strong> A basic sense of okayness ("this situation is fine too"), ease without clinging to outcomes, and an open mind that naturally accepts diverse perspectives are the beautiful characteristics of this level.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Playing the role of a balanced mediator in conflict situations, or maintaining equanimity even in stressful situations. The relaxed attitude of "both this and that are okay" gives those around you a sense of stability too.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Building on this stability to explore deeper meaning and values in life is the way forward. Moving beyond flexibility to develop a deep trust that life is leading you in a good direction — and a spontaneous desire for growth — is the bridge to Willingness (310).</p>`
+        },
+        willing: {
+            ko: `<p><strong>의지(Willingness, 310)</strong> 단계는 성장과 발전을 향한 진정한 열망이 내면에서 자연스럽게 솟아오르는 아름다운 상태입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 낙관과 희망:</strong> 미래를 기대하며 바라보고, 어려움 속에서도 긍정적인 가능성을 발견하며, 자신과 타인의 성장을 기꺼이 지원하는 마음이 삶을 밝힙니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 자기계발에 적극적이고, 새로운 것을 배우는 것을 즐기며, 주변 사람들에게 긍정적인 영향력을 미칩니다. 도전 앞에서 포기보다 방법을 찾고, 실패에서도 교훈을 가져옵니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 성장의 의지를 더 깊은 삶의 의미와 연결하는 것이 중요합니다. '나는 왜 성장하고 싶은가', '내가 진정으로 기여하고 싶은 것은 무엇인가'를 탐구하는 것이 수용(350)으로 이끄는 다리가 됩니다. 의지가 인정받고자 하는 욕구에서 비롯된 것인지, 아니면 진정한 내면의 열망에서 비롯된 것인지 살펴보는 것도 성장에 도움이 됩니다.</p>`,
+            en: `<p><strong>Willingness (310)</strong> is a beautiful state where a genuine desire for growth and development naturally wells up from within.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Optimism and hope:</strong> Looking forward to the future with anticipation, finding positive possibilities even in difficulties, and a heart willing to support the growth of yourself and others brightens life.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Actively engaged in self-development, enjoying learning new things, and having a positive influence on those around you. Finding ways rather than giving up when facing challenges, and bringing lessons from failure.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Connecting this willingness to grow with deeper meaning in life is important. Exploring "why do I want to grow?" and "what do I truly want to contribute?" becomes the bridge to Acceptance (350). It is also helpful for growth to examine whether the will comes from a desire for recognition or from a genuine inner longing.</p>`
+        },
+        accept: {
+            ko: `<p><strong>수용(Acceptance, 350)</strong> 단계는 삶을 있는 그대로 받아들이는 진정한 능력이 개화되는 아름다운 단계입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 용서와 조화:</strong> 과거의 상처를 용서하고 해방시키며, 다양한 사람과 상황을 판단 없이 받아들이고, 삶의 흐름과 자연스럽게 어우러지는 내면의 평화가 특징입니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 관계에서 깊은 평화를 느끼고, 타인의 결함도 자연스럽게 품을 수 있으며, 삶의 어려운 경험들도 성장의 일부로 바라볼 수 있습니다. 당신의 존재가 주변에 평온함과 안도감을 줍니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 수용의 힘을 더욱 넓히는 것—자신을 넘어 더 광범위한 인류, 자연, 존재 전체를 향한 사랑과 수용으로 확장하는 것—이 이성(400)과 사랑(500)의 단계로 향하는 길입니다. 명상과 봉사 활동이 이 확장을 돕는 훌륭한 도구가 됩니다.</p>`,
+            en: `<p><strong>Acceptance (350)</strong> is a beautiful level where the genuine ability to receive life as it is begins to blossom.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Forgiveness and harmony:</strong> Forgiving and releasing past wounds, receiving diverse people and situations without judgment, and inner peace that naturally harmonizes with the flow of life are the hallmarks of this level.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Feeling deep peace in relationships, being able to naturally embrace others' flaws, and viewing life's difficult experiences as part of growth. Your presence brings calm and relief to those around you.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Broadening this power of acceptance — expanding from yourself to encompass all of humanity, nature, and existence with love and acceptance — is the path to Reason (400) and Love (500). Meditation and service activities are excellent tools to support this expansion.</p>`
+        },
+        reason: {
+            ko: `<p><strong>이성(Reason, 400)</strong> 단계는 명확한 사고, 논리적 분석, 그리고 깊은 이해를 통해 삶을 바라보는 탁월한 단계입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 이해와 의미:</strong> 복잡한 문제를 체계적으로 분석하고, 다양한 관점을 종합하여 깊은 통찰을 얻으며, 지식과 진실을 추구하는 마음이 삶의 원동력이 됩니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 뛰어난 지적 능력과 문제 해결 능력으로 학문, 과학, 분석적 사고가 필요한 분야에서 탁월한 성취를 이룹니다. 감정보다 논리와 근거를 중시하며, 명확한 설명을 통해 타인을 이끌거나 가르치는 것을 잘합니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이성만으로는 닿지 못하는 삶의 가장 깊은 차원이 있습니다. 지적 이해를 가슴의 지혜—공감, 사랑, 연민—와 통합하는 것이 핵심입니다. 명상, 봉사, 예술적 창조 활동을 통해 마음을 열고 사랑(500)의 단계로 나아가는 문을 두드려보세요. 분석하는 마음에서 경험하는 가슴으로의 전환이 이 단계의 가장 큰 성장입니다.</p>`,
+            en: `<p><strong>Reason (400)</strong> is an outstanding level that views life through clear thinking, logical analysis, and deep understanding.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Understanding and meaning:</strong> Systematically analyzing complex problems, synthesizing diverse perspectives to gain deep insight, and a heart that pursues knowledge and truth becomes the driving force of life.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Achieving outstanding results in academia, science, and fields requiring analytical thinking through exceptional intellectual ability and problem-solving skills. Prioritizing logic and evidence over emotion, and excelling at guiding or teaching others through clear explanations.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> There are the deepest dimensions of life that reason alone cannot reach. The key is integrating intellectual understanding with the wisdom of the heart — empathy, love, compassion. Open your heart through meditation, service, and artistic creation, and knock on the door leading to Love (500). The transition from the analyzing mind to the experiencing heart is the greatest growth of this level.</p>`
+        },
+        love: {
+            ko: `<p><strong>사랑(Love, 500)</strong> 단계는 Hawkins가 말하는 진정한 무조건적 사랑이 삶의 기반이 되는 단계입니다. 이 단계에 있는 사람은 드뭅니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 경외와 자비:</strong> 모든 존재를 있는 그대로 소중히 여기고, 타인의 고통에 자연스럽게 반응하며 돕고 싶어하고, 자신과 세상에 대한 깊은 감사가 일상에 넘칩니다. 이 사랑은 감정적 애착이 아니라 존재 자체의 깊은 경외입니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 주변에 있는 것만으로도 사람들에게 평화와 위안을 줍니다. 관계에서 진정한 치유가 일어나며, 조건 없이 사랑하고 섬기는 삶이 자연스럽게 흘러나옵니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 사랑의 실천을 더욱 무조건적이고 자연스럽게 흐르도록 허용하는 것이 중요합니다. '내가 사랑받아야 사랑할 수 있다'는 조건부 사랑의 마지막 흔적을 내려놓고, 사랑이 내 본질임을 더 깊이 신뢰할 때 기쁨(540)의 단계가 열립니다. 당신이 나누는 사랑은 이미 세상을 치유하고 있습니다.</p>`,
+            en: `<p><strong>Love (500)</strong> is the level where the true unconditional love Hawkins speaks of becomes the foundation of life. Those at this level are rare.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Reverence and compassion:</strong> Treasuring all beings as they are, naturally responding to others' suffering with a desire to help, and deep gratitude for yourself and the world overflowing in daily life. This love is not emotional attachment but deep reverence for existence itself.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Simply being present brings peace and comfort to those around you. Genuine healing occurs in relationships, and a life of loving and serving unconditionally flows naturally.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Allowing the practice of this love to become more unconditional and naturally flowing is important. When you release the last traces of conditional love — "I can love only when I am loved" — and more deeply trust that love is your essential nature, the level of Joy (540) opens. The love you share is already healing the world.</p>`
+        },
+        joy: {
+            ko: `<p><strong>기쁨(Joy, 540)</strong> 단계는 외부 상황에 좌우되지 않는 내면의 충만한 기쁨이 삶의 기반이 되는 단계입니다. 매우 희귀한 의식 수준입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 평온과 내적 충만:</strong> 아무것도 하지 않아도 단지 존재하는 것 자체가 기쁨이며, 삶의 모든 순간이 은혜로 느껴지고, 타인에게도 자연스럽게 이 기쁨이 흘러가는 것을 경험합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 당신이 있는 곳에 자연스럽게 빛이 납니다. 타인을 기쁘게 하려고 노력하지 않아도, 당신의 존재 자체가 주변에 긍정적인 에너지를 흘려보냅니다. 삶이 축복임을 온몸으로 체험합니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이미 당신 안에 있는 이 기쁨을 더 깊이 신뢰하고, 내려놓음과 쉬어감을 통해 이 기쁨이 더 온전히 흐를 수 있도록 허용하는 것이 평화(600)로 나아가는 길입니다. 당신의 존재 자체가 세상에 살아있는 선물입니다.</p>`,
+            en: `<p><strong>Joy (540)</strong> is the level where an inner fullness of joy that is not subject to external circumstances becomes the foundation of life. This is a very rare level of consciousness.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Serenity and inner fullness:</strong> Simply existing without doing anything is itself joy; every moment of life is felt as grace, and this joy naturally flows to others as well.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Light naturally radiates where you are. Without trying to please others, your very existence flows positive energy to those around you. Life as blessing is experienced with one's whole being.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> More deeply trusting this joy already within you, and allowing it to flow more fully through letting go and resting, is the path to Peace (600). Your very existence is a living gift to the world.</p>`
+        },
+        peace: {
+            ko: `<p><strong>평화(Peace, 600)</strong> 단계는 Hawkins의 의식 지도에서 거의 모든 것이 완전한 고요와 초월로 경험되는 단계입니다. 극히 희귀한 의식 수준입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 축복과 초월:</strong> 삶의 모든 면이 완벽한 질서 속에 있다는 깊은 앎, 말로 설명할 수 없는 내면의 고요함, 존재 자체가 축복임을 온전히 체험합니다. 시간과 공간을 초월한 평화를 경험합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 이 단계에 있는 사람은 그 존재만으로 주변에 조용하고 깊은 평화의 영향을 미칩니다. 말보다 침묵이, 행동보다 존재가 더 큰 영향력을 가집니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 평화가 더욱 안정화되고 깊어지도록, 그리고 이 경험을 통해 더 많은 사람들에게 이 평화를 나누는 방향으로 나아가는 것이 깨달음(700)으로 향하는 길입니다. 당신의 고요함이 세상에 무한한 축복을 흘려보내고 있습니다.</p>`,
+            en: `<p><strong>Peace (600)</strong> is a level on Hawkins' Map of Consciousness where nearly everything is experienced as complete stillness and transcendence. An extremely rare level of consciousness.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Bliss and transcendence:</strong> A deep knowing that all aspects of life exist within perfect order, an ineffable inner stillness, and the complete experience that existence itself is blessing. Peace that transcends time and space is experienced.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Those at this level exert a quiet, deep peaceful influence on those around them simply through their existence. Silence more than words, being more than doing, carries greater influence.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Allowing this peace to further stabilize and deepen, and moving in the direction of sharing this peace with more people through this experience, is the path toward Enlightenment (700). Your stillness is flowing infinite blessing into the world.</p>`
+        },
+        enlight: {
+            ko: `<p><strong>깨달음(Enlightenment, 700)</strong> 단계는 Hawkins의 의식 지도에서 최고의 단계로, 순수 의식이 현실이 되는 경험입니다. 역사적으로 극소수의 인류가 도달한 수준입니다.</p>
+<p style="margin-top:10px;"><strong>핵심 감정 — 순수 의식과 존재:</strong> 분리감이 사라지고 모든 것이 하나임을 직접적으로 인식하며, 존재 그 자체가 의식이자 사랑임을 체험합니다. 개인적 자아를 초월하여 전체와 하나됨을 경험합니다.</p>
+<p style="margin-top:10px;"><strong>주된 행동 양식:</strong> 이 단계에 있는 사람들은 역사적으로 인류에게 깊은 영적 영향을 미친 존재들과 같은 의식 수준에 있습니다. 그 삶 자체가 인류에게 귀한 선물이며, 존재하는 것만으로 세상에 무한한 빛을 더합니다.</p>
+<p style="margin-top:10px;"><strong>성장을 위한 방향:</strong> 이 단계에서의 성장은 더 이상 개인의 발전이 아니라, 이 깊은 의식이 더 온전히 세상으로 흘러가도록 허용하는 것입니다. 당신의 존재 자체가 세상에 대한 가장 큰 선물입니다. 이 깊은 앎이 세상에 계속 흘러가기를 바랍니다.</p>`,
+            en: `<p><strong>Enlightenment (700)</strong> is the highest level on Hawkins' Map of Consciousness — an experience where pure consciousness becomes reality. Historically, an extremely small number of humanity has reached this level.</p>
+<p style="margin-top:10px;"><strong>Core emotion — Pure consciousness and being:</strong> The sense of separation disappears and all is directly recognized as one; existence itself is experienced as consciousness and love. The personal self is transcended and oneness with the whole is experienced.</p>
+<p style="margin-top:10px;"><strong>Primary behavior pattern:</strong> Those at this level are at the same level of consciousness as those who have historically had a profound spiritual influence on humanity. Their very life is a precious gift to humanity, and simply existing adds infinite light to the world.</p>
+<p style="margin-top:10px;"><strong>Direction for growth:</strong> Growth at this level is no longer personal development but allowing this deep consciousness to flow more fully into the world. Your very existence is the greatest gift to the world. May this deep knowing continue to flow into the world.</p>`
+        },
     };
-    return interpretations[levelId]?.[lang] || '당신의 여정을 축하합니다.';
+    return interpretations[levelId]?.[lang] || (lang === 'ko' ? '당신의 여정을 축하합니다.' : 'We celebrate your journey.');
 }
 
 function getGrowthTip(levelId, lang) {
     const tips = {
-        shame: { ko: '자신을 향한 비판적 목소리를 조금씩 부드럽게 하는 연습을 해보세요. 작은 자기 연민의 행동들이 변화를 만듭니다.', en: 'Practice gradually softening the critical voice toward yourself. Small acts of self-compassion create change.' },
-        guilt: { ko: '자신을 처벌하는 대신, 잘못에서 배우고 앞으로 나아가는 방식을 탐구해 보세요.', en: 'Instead of punishing yourself, explore learning from mistakes and moving forward.' },
-        apathy: { ko: '하루 한 가지, 아주 작은 행동을 시도해보세요. 의지의 작은 불꽃이 모든 것을 바꿉니다.', en: 'Try one very small action each day. A small spark of will can change everything.' },
-        grief: { ko: '슬픔을 억누르지 말고 안전한 공간에서 충분히 표현해 보세요. 표현된 감정은 흘러갑니다.', en: 'Don\'t suppress grief — express it fully in a safe space. Expressed emotions flow and release.' },
-        fear: { ko: '두려움에 맞서 조금씩 행동해보세요. 각각의 작은 용기가 두려움을 줄여갑니다.', en: 'Gradually take action in the face of fear. Each small act of courage reduces fear.' },
-        desire: { ko: '외부의 것에서 내면의 충만함을 찾는 연습을 시작해보세요. 진정한 만족은 내면에 있습니다.', en: 'Begin practicing finding inner fulfillment rather than seeking it in external things.' },
-        anger: { ko: '분노의 에너지를 창의적 행동과 건강한 경계 설정으로 전환해보세요.', en: 'Channel the energy of anger into creative action and healthy boundary-setting.' },
-        pride: { ko: '\'나는 틀릴 수도 있다\'는 가능성에 마음을 열어보세요. 겸손함이 더 큰 힘을 줍니다.', en: 'Open your heart to the possibility of being wrong. Humility gives greater strength.' },
-        courage: { ko: '이미 가진 내면의 힘을 더 넓은 삶의 영역에 적용해보세요. 당신은 할 수 있습니다.', en: 'Apply the inner strength you already have to broader areas of life. You can do this.' },
-        neutral: { ko: '유연함에서 더 나아가 삶의 다양한 국면들에 대한 깊은 신뢰를 개발해보세요.', en: 'Moving beyond flexibility, develop deeper trust in the various phases of life.' },
-        willing: { ko: '성장의 의지를 삶의 더 깊은 의미 탐구와 연결해보세요.', en: 'Connect your will to grow with exploring deeper meaning in life.' },
-        accept: { ko: '용서와 수용을 자신을 넘어 더 넓은 관계와 상황으로 확장해보세요.', en: 'Expand forgiveness and acceptance beyond yourself to wider relationships and situations.' },
-        reason: { ko: '지적 이해를 마음의 경험과 연결하는 명상, 예술, 봉사 활동을 탐색해보세요.', en: 'Explore meditation, art, or service to connect intellectual understanding with heart experience.' },
-        love: { ko: '사랑의 실천을 더 무조건적으로, 더 자연스럽게 흘러가도록 허용해보세요.', en: 'Allow the practice of love to become more unconditional and more naturally flowing.' },
-        joy: { ko: '이미 당신 안에 있는 기쁨을 신뢰하고 깊이 쉬어가세요.', en: 'Trust the joy already within you and rest deeply in it.' },
-        peace: { ko: '존재 그 자체로 완전합니다. 이 경험을 그저 있는 그대로 허용하세요.', en: 'Complete as existence itself. Simply allow this experience to be as it is.' },
-        enlight: { ko: '당신의 존재 자체가 세상에 대한 선물입니다.', en: 'Your very existence is a gift to the world.' },
+        shame: { ko: '오늘 하루, 자신에게 가장 친한 친구에게 하듯 따뜻한 말 한 마디를 해보세요. "나는 완벽하지 않아도 괜찮아. 나는 사랑받을 자격이 있어." 자기 연민은 가장 강력한 치유의 도구입니다. 작은 성공 경험을 하나씩 쌓아가며 새로운 자기 이야기를 만들어 가세요.', en: 'Today, say one warm word to yourself as you would to your closest friend: "It is okay not to be perfect. I deserve to be loved." Self-compassion is the most powerful healing tool. Build new self-stories by accumulating small success experiences one by one.' },
+        guilt: { ko: '잘못에서 배우되 자기 처벌은 내려놓으세요. "나는 실수를 했지만, 그것이 내 전부가 아니다. 나는 더 잘할 수 있다"는 자기 용서의 문장을 매일 아침 되새기는 것을 시작해보세요. 실수에서 배운 것을 미래의 선한 행동으로 전환하는 데 에너지를 쓰세요.', en: 'Learn from mistakes but put down self-punishment. Begin each morning by reflecting on the self-forgiveness statement: "I made a mistake, but that is not all of who I am. I can do better." Channel energy into transforming lessons from mistakes into future good actions.' },
+        apathy: { ko: '지금 당장 거창한 것을 할 필요 없습니다. 오늘 딱 한 가지—창문 열기, 물 한 잔 마시기, 5분 산책—만 해보세요. 그 작은 불씨들이 모여 다시 살아가는 힘이 됩니다. 혼자 감당하기 어렵다면 전문적인 상담 지원을 받는 것을 적극 권합니다.', en: 'You do not need to do anything grand right now. Try just one thing today — opening a window, drinking a glass of water, a 5-minute walk. Those small sparks gather into the strength to live again. If it is hard to manage alone, actively seeking professional counseling support is strongly recommended.' },
+        grief: { ko: '슬픔을 억누르지 마세요. 일기를 쓰거나, 신뢰할 수 있는 사람과 나누거나, 상담을 통해 슬픔을 충분히 표현하세요. 표현된 감정은 흘러갑니다. 그리고 잃은 것이 당신에게 가르쳐 준 것, 그것이 당신 삶에서 지닌 의미를 발견하는 것이 앞으로 나아가는 다리가 됩니다.', en: 'Do not suppress grief. Express it fully through journaling, sharing with someone you trust, or counseling. Expressed emotions flow and release. And discovering what was lost taught you, and the meaning it held in your life, becomes the bridge to moving forward.' },
+        fear: { ko: '두려움이 사라지길 기다리지 마세요. 두려움을 안고 작은 한 걸음을 내딛는 것이 용기입니다. 안전한 환경에서 아주 작은 도전 하나를 시도해 보고, "해봤더니 할 수 있었다"는 경험을 쌓아가세요. 그 경험들이 두려움을 조금씩 줄여나갑니다.', en: 'Do not wait for the fear to disappear. Taking one small step while carrying fear is courage. Try one very small challenge in a safe environment and accumulate experiences of "I tried it and I could do it." Those experiences gradually reduce fear.' },
+        desire: { ko: '하루 5분, 조용히 앉아 지금 이 순간 이미 가진 것들에 감사하는 시간을 가져보세요. 감사 일기를 쓰는 것도 좋습니다. 외부에서 내면으로 시선을 돌리는 이 연습이 쌓일수록 "나는 지금 이미 충분하다"는 내면의 안정감이 자라납니다.', en: 'Take 5 minutes each day to sit quietly and be grateful for what you already have in this moment. Keeping a gratitude journal is also wonderful. As this practice of turning the gaze from external to internal accumulates, the inner stability of "I am already enough right now" grows.' },
+        anger: { ko: '분노가 올라올 때 즉각 반응하기 전에 잠시 멈추고 심호흡을 한 번 해보세요. "이 분노가 내게 무엇을 알려주고 있는가? 내가 진정으로 원하는 것은 무엇인가?"를 탐구하세요. 이 강력한 에너지를 창의적 표현—글쓰기, 운동, 예술—이나 건강한 경계 설정으로 전환해보세요.', en: 'Before reacting immediately when anger arises, pause and take one deep breath. Explore "What is this anger telling me? What do I truly want?" Try channeling this powerful energy into creative expression — writing, exercise, art — or healthy boundary-setting.' },
+        pride: { ko: '다음번에 누군가의 말에 반사적으로 반박하고 싶을 때, 먼저 "이 사람의 말에서 내가 배울 수 있는 것이 있는가?"라고 스스로에게 물어보세요. 겸손함은 자신을 낮추는 것이 아니라, 더 크고 풍요로운 세상을 보는 창문입니다.', en: 'The next time you want to reflexively refute someone, first ask yourself: "Is there something I can learn from what this person is saying?" Humility is not lowering yourself but a window through which to see a larger, richer world.' },
+        courage: { ko: '이미 당신 안에 있는 힘을 신뢰하고, 그 힘을 삶의 더 넓은 영역—관계, 직업, 꿈—에 적용해보세요. 두려움과 함께 행동하는 것이 이 단계의 지혜입니다. 오늘 미루어 왔던 한 가지를 용기 있게 시작해보세요. 삶은 당신을 지지합니다.', en: 'Trust the strength already within you and apply it to broader areas of life — relationships, work, dreams. Acting alongside fear is the wisdom of this level. Courageously start one thing you have been putting off today. Life supports you.' },
+        neutral: { ko: '삶이 나를 좋은 방향으로 이끈다는 신뢰를 조금 더 깊게 연습해보세요. 통제하려는 마음을 내려놓고, 삶의 흐름에 더 깊이 맡겨보는 연습이 의지(310)의 단계로 나아가는 문을 열어줍니다.', en: 'Practice a little more deeply the trust that life is leading you in a good direction. Putting down the desire to control and practicing surrendering more deeply to the flow of life opens the door to Willingness (310).' },
+        willing: { ko: '"나는 왜 성장하고 싶은가?"라는 질문을 일기에 써보세요. 성취를 위한 성장이 아닌, 더 깊은 삶의 의미와 연결된 성장을 탐구하는 것이 수용(350)으로 향하는 다리가 됩니다. 봉사나 나눔 활동도 이 깊이를 더하는 데 좋은 도구입니다.', en: 'Write in a journal: "Why do I want to grow?" Exploring growth connected to deeper meaning in life — rather than growth for achievement — becomes the bridge to Acceptance (350). Service and sharing activities are also good tools for adding this depth.' },
+        accept: { ko: '용서와 수용을 나 자신을 넘어 더 넓게 확장해보세요. 아직 완전히 용서하지 못한 사람이나 상황이 있다면, "이것도 나의 성장의 일부다"라는 관점으로 바라보는 연습을 해보세요. 명상과 봉사가 이 확장을 돕는 훌륭한 동반자입니다.', en: 'Expand forgiveness and acceptance beyond yourself to a wider circle. If there is someone or situation you have not yet fully forgiven, practice viewing it with the perspective "this too is part of my growth." Meditation and service are wonderful companions in supporting this expansion.' },
+        reason: { ko: '지적 이해를 가슴의 경험과 연결하는 시간을 가져보세요. 명상, 자연과의 교감, 예술 감상이나 창작, 봉사 활동이 분석하는 마음에서 경험하는 가슴으로 전환하는 데 도움이 됩니다. 알고 있는 것을 삶으로 살아내는 연습이 사랑(500)의 문을 엽니다.', en: 'Take time to connect intellectual understanding with heart experience. Meditation, communion with nature, appreciating or creating art, and service activities help transition from the analyzing mind to the experiencing heart. The practice of living what you know opens the door to Love (500).' },
+        love: { ko: '사랑이 조건 없이, 더 자연스럽게 흐르도록 허용해보세요. "내가 사랑받아야 사랑할 수 있다"는 마지막 조건을 내려놓을 때, 기쁨(540)의 단계가 더 가까이 열립니다. 당신이 나누는 사랑이 이미 세상을 치유하고 있습니다.', en: 'Allow love to flow unconditionally, more naturally. When you release the last condition of "I can love only when I am loved," Joy (540) opens closer. The love you share is already healing the world.' },
+        joy: { ko: '이 기쁨을 신뢰하고 그 안에서 더 깊이 쉬어가세요. 아무것도 하지 않아도 괜찮습니다. 존재하는 것 자체가 이미 충분합니다. 이 내면의 충만함이 더 온전히 흐르도록 허용하는 것이 평화(600)로 나아가는 길입니다.', en: 'Trust this joy and rest more deeply within it. It is okay to do nothing. Simply existing is already enough. Allowing this inner fullness to flow more completely is the path to Peace (600).' },
+        peace: { ko: '이 고요함 안에 더 깊이 머무르세요. 설명하려 하지 않아도 됩니다. 이 경험이 당신을 통해 세상으로 자연스럽게 흘러가도록 허용하는 것이 가장 아름다운 성장입니다. 당신의 존재 자체가 세상에 축복입니다.', en: 'Rest more deeply in this stillness. You do not need to explain it. Allowing this experience to flow naturally into the world through you is the most beautiful growth. Your very existence is a blessing to the world.' },
+        enlight: { ko: '이 깊은 의식이 세상으로 더 온전히 흘러가도록 허용하세요. 당신의 존재 자체가 인류에게 가장 큰 선물입니다. 이 앎이 계속 세상에 빛을 더해가기를 바랍니다.', en: 'Allow this deep consciousness to flow more fully into the world. Your very existence is the greatest gift to humanity. May this knowing continue to add light to the world.' },
     };
-    return tips[levelId]?.[lang] || '계속 성장해 주세요.';
+    return tips[levelId]?.[lang] || (lang === 'ko' ? '계속 성장해 주세요.' : 'Keep growing.');
 }
 
 function getInterventionStrategy(levelId, lang) {
